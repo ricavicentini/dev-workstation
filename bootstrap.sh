@@ -6,7 +6,7 @@ echo "======================================"
 echo " Dev Workstation Bootstrap"
 echo "======================================"
 
-bash scripts/install/zsh.sh
+bash scripts/link/dotfiles.sh
 
 echo
 echo "Bootstrap completed."
