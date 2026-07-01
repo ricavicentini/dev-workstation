@@ -2,21 +2,12 @@
 
 set -euo pipefail
 
-echo "Starting dev workstation bootstrap..."
+echo "======================================"
+echo " Dev Workstation Bootstrap"
+echo "======================================"
 
-sudo apt update
+bash scripts/install/zsh.sh
 
-sudo apt install -y \
-  curl \
-  wget \
-  git \
-  unzip \
-  zip \
-  zsh \
-  fzf \
-  ripgrep \
-  fd-find \
-  bat
-
+echo
 echo "Bootstrap completed."
-
+echo "Restart your terminal."
