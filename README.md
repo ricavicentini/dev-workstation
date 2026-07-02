@@ -1,42 +1,69 @@
 # Dev Workstation
 
-Personal development workstation configuration for WSL.
+A reproducible development environment for WSL built using the principles of **Development Environment as Code (DEaC)**.
 
-This repository contains everything needed to bootstrap a new development environment from scratch, including:
+Rather than treating a workstation as a collection of installation scripts, this project manages it as a maintainable software system: version-controlled, modular, reproducible and designed to evolve over time.
 
-* Terminal configuration
-* Shell (Zsh)
-* Prompt (Oh My Posh)
-* Git and GitHub configuration
-* VS Code settings and extensions
-* Java and Kotlin tooling
-* Development utilities
-* Bootstrap and update scripts
-* Documentation
+---
 
-## Goals
+# Vision
 
-* Reproducible development environment
-* Infrastructure as Code for the workstation
-* Version-controlled configuration
-* Fast setup on a new machine
-* Continuous improvements over time
+Development environments naturally drift over time.
 
-## Repository Structure
+Shell configuration, editor settings, language runtimes and development tools are often installed and configured manually, making it difficult to:
+
+* reproduce the same environment on another machine;
+* understand why a configuration exists;
+* review changes over time;
+* recover from failures;
+* share a consistent development environment.
+
+This project aims to eliminate that drift by treating the workstation itself as code.
+
+---
+
+# Goals
+
+* Reproducible workstation setup.
+* Development Environment as Code.
+* Version-controlled configuration.
+* Modular architecture.
+* Idempotent execution.
+* Incremental evolution.
+* Minimal cognitive load.
+* Excellent developer experience.
+
+---
+
+# Non-Goals
+
+This project is **not** intended to:
+
+* become a generic package manager;
+* replace operating system package managers;
+* introduce unnecessary abstractions;
+* become a Bash framework.
+
+---
+
+# Repository Structure
 
 ```text
 .
+├── AGENTS.md
+├── README.md
 ├── bootstrap.sh
-├── config/
+├── core/
+├── dotfiles/
+├── modules/
 ├── docs/
-├── kotlin/
-├── oh-my-posh/
-├── scripts/
-├── vscode/
-└── zsh/
+│   └── adr/
+└── scripts/
 ```
 
-## Roadmap
+---
+
+# Roadmap
 
 * [ ] Configure Zsh
 * [ ] Configure Oh My Posh
@@ -49,8 +76,13 @@ This repository contains everything needed to bootstrap a new development enviro
 * [ ] Install Gradle
 * [ ] Configure VS Code
 * [ ] Install development utilities
-* [ ] Create a complete bootstrap script
+* [ ] Implement the bootstrap orchestrator
+* [ ] Implement the module loader
+* [ ] Implement module validation
+* [ ] Add a `doctor` command
 
-## License
+---
+
+# License
 
 MIT
