@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+if [[ "${SYMLINK_TEST_RM_FAIL:-0}" == '1' ]]; then
+  exit 71
+fi
+
+exec "${SYMLINK_TEST_REAL_RM:?}" "$@"

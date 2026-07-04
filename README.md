@@ -54,11 +54,31 @@ This project is **not** intended to:
 ├── README.md
 ├── bootstrap.sh
 ├── core/
+│   └── symlink.sh
 ├── dotfiles/
+│   ├── git/
+│   └── zsh/
 ├── modules/
+│   ├── dotfiles/  # temporary Git configuration module
+│   └── zsh/
 ├── docs/
-│   └── adr/
+│   ├── adr/
+│   └── plans/
 └── scripts/
+```
+
+Zsh is the first module organized by technology. Package installation is still
+deferred, so the bootstrap currently configures and validates existing assets
+without installing packages:
+
+```bash
+bash bootstrap.sh
+```
+
+Run the isolated test suite with:
+
+```bash
+bash tests/run.sh
 ```
 
 ---

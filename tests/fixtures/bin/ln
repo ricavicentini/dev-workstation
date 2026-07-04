@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+count=0
+if [[ -f "${SYMLINK_TEST_LN_COUNT_FILE:?}" ]]; then
+  read -r count < "$SYMLINK_TEST_LN_COUNT_FILE"
+fi
+
+count=$((count + 1))
+printf '%s\n' "$count" > "$SYMLINK_TEST_LN_COUNT_FILE"
+
+if [[ "$count" -eq 1 && "${SYMLINK_TEST_LN_MODE:-}" == 'fail-first' ]]; then
+  exit 70
+fi
+
+if [[ "$count" -eq 2 ]]; then
+  case "${SYMLINK_TEST_LN_MODE:-}" in
+    fail-second)
+      exit 70
+      ;;
+    term-second)
+      kill -TERM "$PPID"
+      exit 143
+      ;;
+  esac
+fi
+
+if [[ "$count" -eq 3 && "${SYMLINK_TEST_LN_MODE:-}" == 'wrong-third' ]]; then
+  target="${!#}"
+  exec "${SYMLINK_TEST_REAL_LN:?}" -s -- "${SYMLINK_TEST_WRONG_SOURCE:?}" "$target"
+fi
+
+exec "${SYMLINK_TEST_REAL_LN:?}" "$@"
