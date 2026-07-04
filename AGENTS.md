@@ -32,7 +32,9 @@ When multiple solutions exist, discuss the trade-offs of each option before impl
 
 Break down complex work into small, predictable and valuable increments.
 
-Favor continuous progress over large refactorings.
+Favor continuous progress over large refactorings. 
+
+Each increment should be small enough to be understood and reviewed comfortably. If an implementation grows beyond approximately 1000 lines of change, reconsider the plan and split it into smaller deliverables.
 
 ---
 
@@ -41,6 +43,8 @@ Favor continuous progress over large refactorings.
 ### Plan Before Implementing
 
 Changes should leave behind enough documentation for future maintainers to understand what was planned, why it was implemented, and how the work was decomposed.
+
+**Optimize for mergeability, not implementation speed.**
 
 Break down complex work into small, predictable and valuable increments.
 
@@ -55,6 +59,13 @@ Before implementing, document an incremental implementation plan in the appropri
 Favor continuous progress over large refactorings.
 
 Favor continuous progress over large refactorings.
+
+### Optimize for reviewability.
+
+Each increment should be small enough to be understood, reviewed and merged independently.
+
+If a proposed implementation exceeds approximately 1000 lines of change, reconsider the plan and split the work into smaller deliverables.
+
 ### The Repository Is the Source of Truth
 
 Configuration files must be managed from this repository.
