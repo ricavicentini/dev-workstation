@@ -85,21 +85,40 @@ bash tests/run.sh
 
 # Roadmap
 
-* [ ] Configure Zsh
-* [ ] Configure Oh My Posh
-* [ ] Install Nerd Fonts
-* [ ] Configure Git
-* [ ] Install GitHub CLI
+The roadmap tracks project outcomes. Detailed sequencing, dependencies and
+validation remain in the versioned [implementation plans](docs/plans/).
+
+## Foundation completed
+
+* [x] Manage configuration assets from the repository through symbolic links.
+* [x] Define the `install`, `configure`, `validate` and `all` module lifecycle.
+* [x] Implement transactional symlink management with validation and rollback.
+* [x] Organize Zsh configuration as the first technology-owned module.
+* [x] Bootstrap and validate the currently supported Git and Zsh assets.
+* [x] Add isolated tests for core operations, modules and bootstrap integration.
+
+## Next increments
+
+1. [ ] Create the technology-owned Git module and remove the temporary
+   dotfiles module.
+2. [ ] Implement Zsh installation, functional configuration and validation.
+3. [ ] Implement Git installation, functional configuration and validation.
+
+## Planned capabilities
+
+* [ ] Configure Oh My Posh.
+* [ ] Install Nerd Fonts.
+* [ ] Install GitHub CLI.
 * [ ] Install SDKMAN!
-* [ ] Install Java
-* [ ] Install Kotlin
-* [ ] Install Gradle
-* [ ] Configure VS Code
-* [ ] Install development utilities
-* [ ] Implement the bootstrap orchestrator
-* [ ] Implement the module loader
-* [ ] Implement module validation
-* [ ] Add a `doctor` command
+* [ ] Install Java, Kotlin and Gradle.
+* [ ] Configure VS Code.
+* [ ] Install common development utilities.
+
+## Architecture evolution
+
+* [ ] Add module discovery when the number of modules justifies a loader.
+* [ ] Extract shared logging when repeated output behavior justifies it.
+* [ ] Add a `doctor` command for complete workstation diagnostics.
 
 ---
 
