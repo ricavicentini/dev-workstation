@@ -54,12 +54,13 @@ This project is **not** intended to:
 ├── README.md
 ├── bootstrap.sh
 ├── core/
+│   ├── module.sh
 │   └── symlink.sh
 ├── dotfiles/
 │   ├── git/
 │   └── zsh/
 ├── modules/
-│   ├── dotfiles/  # temporary Git configuration module
+│   ├── git/
 │   └── zsh/
 ├── docs/
 │   ├── adr/
@@ -67,9 +68,11 @@ This project is **not** intended to:
 └── scripts/
 ```
 
-Zsh is the first module organized by technology. Package installation is still
-deferred, so the bootstrap currently configures and validates existing assets
-without installing packages:
+Git and Zsh are organized as independent technology modules. Their public
+entrypoints delegate lifecycle orchestration to `core/module.sh`, while phase
+scripts retain technology-specific behavior. Package installation is still
+deferred, so the bootstrap configures and validates existing assets without
+installing packages:
 
 ```bash
 bash bootstrap.sh
@@ -94,15 +97,16 @@ validation remain in the versioned [implementation plans](docs/plans/).
 * [x] Define the `install`, `configure`, `validate` and `all` module lifecycle.
 * [x] Implement transactional symlink management with validation and rollback.
 * [x] Organize Zsh configuration as the first technology-owned module.
+* [x] Centralize lifecycle dispatch shared by technology modules.
+* [x] Organize Git configuration as a technology-owned module and remove the
+  temporary dotfiles module.
 * [x] Bootstrap and validate the currently supported Git and Zsh assets.
 * [x] Add isolated tests for core operations, modules and bootstrap integration.
 
 ## Next increments
 
-1. [ ] Create the technology-owned Git module and remove the temporary
-   dotfiles module.
-2. [ ] Implement Zsh installation, functional configuration and validation.
-3. [ ] Implement Git installation, functional configuration and validation.
+1. [ ] Implement Zsh installation, functional configuration and validation.
+2. [ ] Implement Git installation, functional configuration and validation.
 
 ## Planned capabilities
 

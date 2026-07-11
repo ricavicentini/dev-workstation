@@ -5,7 +5,15 @@
                               │
                 ┌─────────────┴─────────────┐
                 ▼                           ▼
- modules/dotfiles (temporary)          modules/zsh
+        modules/git/module.sh     modules/zsh/module.sh
+                │                           │
+                └─────────────┬─────────────┘
+                              ▼
+                        core/module.sh
+                              │
+                ┌─────────────┴─────────────┐
+                ▼                           ▼
+        Git phase scripts             Zsh phase scripts
                 │                           │
                 └─────────────┬─────────────┘
                               ▼
@@ -20,14 +28,14 @@
 | Component     | Responsibility                                                                              |
 | ------------- | ------------------------------------------------------------------------------------------- |
 | **bootstrap** | Entry point responsible for orchestrating the setup.                                        |
-| **core**      | Shared infrastructure with concrete reuse across modules, currently symlink management.      |
+| **core**      | Shared lifecycle orchestration and transactional symlink infrastructure.                     |
 | **modules**   | Installation, configuration and validation of a single technology.                          |
 | **dotfiles**  | Version-controlled assets owned by their corresponding technology modules.                  |
 
-The dotfiles module is a temporary migration boundary that owns only the Git
-assets. Zsh is the first technology-owned module. The temporary module will be
-removed when Git receives its own module, as defined by
-[ADR-0003](adr/0003-technology-owned-modules.md).
+Git and Zsh are independently executable technology modules, as defined by
+[ADR-0003](adr/0003-technology-owned-modules.md). Their entrypoints identify the
+module directory and delegate lifecycle dispatch to `core/module.sh`. The
+runner does not discover modules or contain technology-specific behavior.
 
 ---
 
@@ -45,15 +53,21 @@ Modules expose the lifecycle through a single entrypoint:
 module.sh <install|configure|validate|all>
 ```
 
-A technology module may split lifecycle behavior into internal scripts:
+A technology module keeps a small public entrypoint and implements lifecycle
+behavior in internal phase scripts:
 
 ```text
 modules/zsh/
-├── module.sh       # public entrypoint
+├── module.sh       # public wrapper around core/module.sh
 ├── install.sh      # internal
 ├── configure.sh    # internal
 └── validate.sh     # internal
 ```
+
+The internal lifecycle runner validates the required phase scripts before
+execution. For `all`, it verifies every phase before running them in
+`install`, `configure`, `validate` order and stops at the first failure. This
+shared dispatch is distinct from module discovery, which remains deferred.
 
 Configuration remains transactional until validation succeeds. If a module
 fails or is interrupted while configuring the workstation, it restores the
