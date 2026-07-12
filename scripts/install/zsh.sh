@@ -2,12 +2,6 @@
 
 set -euo pipefail
 
-echo "Installing Zsh..."
-
-sudo apt install -y zsh
-
-echo "Changing default shell..."
-
-chsh -s "$(which zsh)"
-
-echo "Done."
+printf 'This legacy script is no longer used.\n' >&2
+printf 'Run: bash modules/zsh/module.sh all\n' >&2
+exit 1

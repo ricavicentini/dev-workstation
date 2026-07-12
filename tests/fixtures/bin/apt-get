@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -uo pipefail
+
+if [[ "${1:-}" != 'install' || "${2:-}" != '-y' || "${3:-}" != 'zsh' ]]; then
+  exit 64
+fi
+
+printf '%s\n' 'apt-get install -y zsh' >> "${ZSH_TEST_APT_LOG:?}"
+printf '#!/bin/bash\nexit 0\n' > "${ZSH_TEST_FAKE_ZSH:?}"
+/bin/chmod +x "$ZSH_TEST_FAKE_ZSH"

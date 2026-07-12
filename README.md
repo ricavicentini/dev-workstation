@@ -70,9 +70,9 @@ This project is **not** intended to:
 
 Git and Zsh are organized as independent technology modules. Their public
 entrypoints delegate lifecycle orchestration to `core/module.sh`, while phase
-scripts retain technology-specific behavior. Package installation is still
-deferred, so the bootstrap configures and validates existing assets without
-installing packages:
+scripts retain technology-specific behavior. The bootstrap keeps Git
+installation deferred and installs Zsh with `apt-get` when it is not already
+available:
 
 ```bash
 bash bootstrap.sh
@@ -105,7 +105,8 @@ validation remain in the versioned [implementation plans](docs/plans/).
 
 ## Next increments
 
-1. [ ] Implement Zsh installation, functional configuration and validation.
+1. [x] Implement Zsh installation, functional configuration and validation
+   without changing the default shell.
 2. [ ] Implement Git installation, functional configuration and validation.
 
 ## Planned capabilities

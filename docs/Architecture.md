@@ -83,3 +83,9 @@ Modules should always be:
 * idempotent;
 * self-contained;
 * focused on a single responsibility.
+
+Installation capability is incremental by module. The Zsh module currently
+installs the package through the host's Debian/Ubuntu package manager and
+validates the executable plus `.zshrc` syntax. Git remains configuration-only
+until its own installation increment is implemented. No module changes the
+user's default shell automatically.

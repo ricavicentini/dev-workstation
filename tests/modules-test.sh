@@ -10,6 +10,7 @@ FIXTURE_BIN="$ROOT_DIR/tests/fixtures/bin"
 REAL_LN="$(command -v ln)"
 REAL_MV="$(command -v mv)"
 REAL_RM="$(command -v rm)"
+REAL_BASH="$(command -v bash)"
 TEST_ROOT="$(mktemp -d)"
 TEST_COUNT=0
 
@@ -75,18 +76,61 @@ test_zsh_module_owns_only_zsh() {
   pass 'Zsh module owns only .zshrc'
 }
 
-test_zsh_deferred_installation_has_no_side_effects() {
+test_zsh_install_is_idempotent_when_present() {
   local home
-  home="$(new_home deferred-install)"
+  home="$(new_home zsh-installed)"
 
-  if HOME="$home" bash "$ZSH_MODULE" install >/dev/null 2>&1; then
-    fail 'deferred install unexpectedly succeeded'
-  fi
-  if HOME="$home" bash "$ZSH_MODULE" all >/dev/null 2>&1; then
-    fail 'deferred all action unexpectedly succeeded'
-  fi
+  HOME="$home" bash "$ZSH_MODULE" install >/dev/null || fail 'installed Zsh was not accepted'
   [[ -z "$(find "$home" -mindepth 1 -maxdepth 1 -print -quit)" ]] || fail 'deferred installation changed HOME'
-  pass 'deferred install and all actions fail without side effects'
+  pass 'Zsh installation is idempotent when the executable already exists'
+}
+
+test_zsh_install_uses_apt_get_when_absent() {
+  local home
+  local fake_bin="$TEST_ROOT/zsh-install-bin"
+  local fake_zsh="$fake_bin/zsh"
+  local apt_log="$TEST_ROOT/zsh-apt.log"
+  home="$(new_home zsh-install)"
+  mkdir -p "$fake_bin"
+
+  HOME="$home" \
+    PATH="$FIXTURE_BIN:$fake_bin" \
+    ZSH_TEST_APT_LOG="$apt_log" \
+    ZSH_TEST_FAKE_ZSH="$fake_zsh" \
+    "$REAL_BASH" "$ROOT_DIR/modules/zsh/install.sh" >/dev/null || fail 'controlled Zsh installation failed'
+  [[ "$(<"$apt_log")" == 'apt-get install -y zsh' ]] || fail 'Zsh installation did not invoke apt-get'
+  [[ -x "$fake_zsh" ]] || fail 'controlled installation did not provide zsh'
+  pass 'Zsh installation invokes apt-get only when the executable is absent'
+}
+
+test_zsh_install_fails_without_apt_get() {
+  local home
+  local fake_bin="$TEST_ROOT/zsh-no-apt-bin"
+  home="$(new_home zsh-no-apt)"
+  mkdir -p "$fake_bin"
+  cp "$FIXTURE_BIN/sudo" "$fake_bin/sudo"
+  chmod +x "$fake_bin/sudo"
+
+  if HOME="$home" PATH="$fake_bin" "$REAL_BASH" "$ROOT_DIR/modules/zsh/install.sh" >/dev/null 2>&1; then
+    fail 'Zsh installation succeeded without apt-get'
+  fi
+  [[ -z "$(find "$home" -mindepth 1 -maxdepth 1 -print -quit)" ]] || fail 'failed installation changed HOME'
+  pass 'Zsh installation fails before mutation when apt-get is unavailable'
+}
+
+test_zsh_validation_checks_syntax() {
+  local home
+  local fake_bin="$TEST_ROOT/zsh-invalid-bin"
+  home="$(new_home zsh-invalid)"
+  mkdir -p "$fake_bin"
+  printf '%s\n' '#!/usr/bin/env bash' 'exit 70' > "$fake_bin/zsh"
+  chmod +x "$fake_bin/zsh"
+  HOME="$home" bash "$ZSH_MODULE" configure >/dev/null || fail 'Zsh configuration failed'
+
+  if HOME="$home" PATH="$fake_bin:$PATH" bash "$ZSH_MODULE" validate >/dev/null 2>&1; then
+    fail 'invalid Zsh syntax unexpectedly validated'
+  fi
+  pass 'Zsh validation checks configuration syntax'
 }
 
 test_git_deferred_installation_has_no_side_effects() {
@@ -181,6 +225,7 @@ test_bootstrap_configures_all_assets() {
   assert_link "$home/.zshrc" "$ROOT_DIR/dotfiles/zsh/.zshrc"
   grep -q '^Configuring Git\.\.\.$' "$output" || fail 'bootstrap did not identify Git configuration'
   grep -q '^Git validated\.$' "$output" || fail 'bootstrap did not identify Git validation'
+  grep -q '^Zsh is already installed\.$' "$output" || fail 'bootstrap did not identify Zsh installation'
   grep -q '^Configuring Zsh\.\.\.$' "$output" || fail 'bootstrap did not identify Zsh configuration'
   grep -q '^Zsh validated\.$' "$output" || fail 'bootstrap did not identify Zsh validation'
   if grep -q '^Symbolic links ' "$output"; then
@@ -213,10 +258,13 @@ test_zsh_failure_keeps_validated_git() {
   pass 'Zsh failure does not undo the validated Git module'
 }
 
-printf '1..8\n'
+printf '1..11\n'
 test_git_module_owns_only_git
 test_zsh_module_owns_only_zsh
-test_zsh_deferred_installation_has_no_side_effects
+test_zsh_install_is_idempotent_when_present
+test_zsh_install_uses_apt_get_when_absent
+test_zsh_install_fails_without_apt_get
+test_zsh_validation_checks_syntax
 test_git_deferred_installation_has_no_side_effects
 test_git_configuration_is_idempotent_and_preserves_existing_files
 test_git_failure_rolls_back_both_targets
