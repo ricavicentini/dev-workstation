@@ -55,6 +55,8 @@ Before implementing, document an incremental implementation plan in the appropri
 - estimate the relative effort of each task;
 - indicate which tasks can be executed in parallel;
 - define the expected outcome of each increment.
+- Indicate the files that need to be created or changed
+- indicate what need to be done in each file
 
 Favor continuous progress over large refactorings.
 
