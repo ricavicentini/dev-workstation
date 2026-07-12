@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -uo pipefail
+
+if [[ "${1:-}" != '-fsSL' || "${3:-}" != '-o' || -z "${4:-}" ]]; then
+  exit 64
+fi
+
+printf '%s\n' "$2" >> "${HOMEBREW_TEST_CURL_LOG:?}"
+cp "${HOMEBREW_TEST_INSTALLER:?}" "$4"

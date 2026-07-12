@@ -1,7 +1,16 @@
 # Architecture
 
 ```text
+                     profiles/*.conf
+                              │
+                              ▼
                          bootstrap.sh
+                              │
+                              ▼
+                    core/profile.sh
+                              │
+                              ▼
+                   core/homebrew.sh
                               │
                 ┌─────────────┴─────────────┐
                 ▼                           ▼
@@ -29,6 +38,7 @@
 | ------------- | ------------------------------------------------------------------------------------------- |
 | **bootstrap** | Entry point responsible for orchestrating the setup.                                        |
 | **core**      | Shared lifecycle orchestration and transactional symlink infrastructure.                     |
+| **profiles**  | Explicit workstation preparation strategies consumed by the bootstrap.                       |
 | **modules**   | Installation, configuration and validation of a single technology.                          |
 | **dotfiles**  | Version-controlled assets owned by their corresponding technology modules.                  |
 
@@ -36,6 +46,11 @@ Git and Zsh are independently executable technology modules, as defined by
 [ADR-0003](adr/0003-technology-owned-modules.md). Their entrypoints identify the
 module directory and delegate lifecycle dispatch to `core/module.sh`. The
 runner does not discover modules or contain technology-specific behavior.
+
+Profiles are selected explicitly by the bootstrap and describe the preparation
+strategy for Homebrew. They are parsed as data and do not execute shell code.
+The bootstrap still lists Git and Zsh explicitly; profile-driven module loading
+is deferred until every listed module can run `all`.
 
 ---
 

@@ -217,9 +217,22 @@ test_git_failure_rolls_back_both_targets() {
 test_bootstrap_configures_all_assets() {
   local home
   local output="$TEST_ROOT/bootstrap-output"
+  local homebrew_root="$TEST_ROOT/bootstrap-homebrew"
+  local homebrew_bin="$homebrew_root/bin"
   home="$(new_home bootstrap)"
+  mkdir -p "$homebrew_bin"
+  cp "$FIXTURE_BIN/apt-get" "$FIXTURE_BIN/curl" "$FIXTURE_BIN/sudo" "$homebrew_bin"
+  chmod +x "$homebrew_bin/apt-get" "$homebrew_bin/curl" "$homebrew_bin/sudo"
 
-  HOME="$home" bash "$BOOTSTRAP" >"$output" || fail 'bootstrap failed'
+  HOME="$home" \
+    PATH="$homebrew_bin:$homebrew_root/prefix/bin:$PATH" \
+    HOMEBREW_TEST_PREFIX="$homebrew_root/prefix" \
+    HOMEBREW_TEST_CURL_LOG="$homebrew_root/curl.log" \
+    HOMEBREW_TEST_INSTALL_LOG="$homebrew_root/install.log" \
+    HOMEBREW_TEST_INSTALLER="$ROOT_DIR/tests/fixtures/homebrew-installer.sh" \
+    HOMEBREW_TEST_APT_LOG="$homebrew_root/apt.log" \
+    DEV_WORKSTATION_BREW_PATH="$homebrew_root/prefix/bin/brew" \
+    bash "$BOOTSTRAP" ubuntu >"$output" || fail 'bootstrap failed'
   assert_link "$home/.gitconfig" "$ROOT_DIR/dotfiles/git/.gitconfig"
   assert_link "$home/.gitignore_global" "$ROOT_DIR/dotfiles/git/.gitignore_global"
   assert_link "$home/.zshrc" "$ROOT_DIR/dotfiles/zsh/.zshrc"

@@ -32,6 +32,7 @@ Example:
 | [0001](0001-use-dotfiles.md) | Use dotfiles as the source of truth | Accepted |
 | [0002](0002-module-lifecycle-contract.md) | Use a command-based module lifecycle | Accepted |
 | [0003](0003-technology-owned-modules.md) | Organize modules by technology | Accepted |
+| [0004](0004-explicit-profiles.md) | Use explicit workstation profiles | Accepted |
 
 ## Guidelines
 

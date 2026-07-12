@@ -54,7 +54,9 @@ This project is **not** intended to:
 ├── README.md
 ├── bootstrap.sh
 ├── core/
+│   ├── homebrew.sh
 │   ├── module.sh
+│   ├── profile.sh
 │   └── symlink.sh
 ├── dotfiles/
 │   ├── git/
@@ -62,6 +64,9 @@ This project is **not** intended to:
 ├── modules/
 │   ├── git/
 │   └── zsh/
+├── profiles/
+│   ├── macos.conf
+│   └── ubuntu.conf
 ├── docs/
 │   ├── adr/
 │   └── plans/
@@ -70,13 +75,18 @@ This project is **not** intended to:
 
 Git and Zsh are organized as independent technology modules. Their public
 entrypoints delegate lifecycle orchestration to `core/module.sh`, while phase
-scripts retain technology-specific behavior. The bootstrap keeps Git
-installation deferred and installs Zsh with `apt-get` when it is not already
-available:
+scripts retain technology-specific behavior. Bootstrap uses an explicit
+profile to prepare Homebrew before configuring the current modules:
 
 ```bash
-bash bootstrap.sh
+bash bootstrap.sh ubuntu
+# or
+bash bootstrap.sh macos
 ```
+
+The Homebrew installer is interactive when Homebrew is absent. Profiles are
+version-controlled data files; they do not detect the operating system or
+execute arbitrary commands.
 
 Run the isolated test suite with:
 
@@ -102,12 +112,15 @@ validation remain in the versioned [implementation plans](docs/plans/).
   temporary dotfiles module.
 * [x] Bootstrap and validate the currently supported Git and Zsh assets.
 * [x] Add isolated tests for core operations, modules and bootstrap integration.
+* [x] Prepare Homebrew through explicit Ubuntu and macOS profiles.
 
 ## Next increments
 
 1. [x] Implement Zsh installation, functional configuration and validation
    without changing the default shell.
 2. [ ] Implement Git installation, functional configuration and validation.
+3. [ ] Migrate module package installation to Homebrew.
+4. [ ] Add ordered module selection through profiles.
 
 ## Planned capabilities
 
