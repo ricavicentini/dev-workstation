@@ -88,6 +88,14 @@ The Homebrew installer is interactive when Homebrew is absent. Profiles are
 version-controlled data files; they do not detect the operating system or
 execute arbitrary commands.
 
+Current behavior:
+
+* Homebrew and the required Bash runtime are prepared from the selected profile.
+* Git configuration is applied and validated, while Git package installation
+  is still deferred.
+* Zsh is configured and validated; its package installation still uses
+  `apt-get` until the next increment migrates both technology modules to Brew.
+
 Run the isolated test suite with:
 
 ```bash
@@ -101,7 +109,7 @@ bash tests/run.sh
 The roadmap tracks project outcomes. Detailed sequencing, dependencies and
 validation remain in the versioned [implementation plans](docs/plans/).
 
-## Foundation completed
+## Completed
 
 * [x] Manage configuration assets from the repository through symbolic links.
 * [x] Define the `install`, `configure`, `validate` and `all` module lifecycle.
@@ -114,13 +122,16 @@ validation remain in the versioned [implementation plans](docs/plans/).
 * [x] Add isolated tests for core operations, modules and bootstrap integration.
 * [x] Prepare Homebrew through explicit Ubuntu and macOS profiles.
 
-## Next increments
+## Next increment
 
-1. [x] Implement Zsh installation, functional configuration and validation
-   without changing the default shell.
-2. [ ] Implement Git installation, functional configuration and validation.
-3. [ ] Migrate module package installation to Homebrew.
-4. [ ] Add ordered module selection through profiles.
+1. [ ] Manage Git and Zsh packages through Homebrew and execute `all` for both
+   modules. See [plan 0006](docs/plans/0006-homebrew-managed-git-zsh.md).
+
+## Following increments
+
+1. [ ] Add ordered module selection and a module loader through profiles.
+2. [ ] Validate GNU/BSD compatibility and add Ubuntu/macOS CI.
+3. [ ] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
 
 ## Planned capabilities
 
@@ -134,7 +145,7 @@ validation remain in the versioned [implementation plans](docs/plans/).
 
 ## Architecture evolution
 
-* [ ] Add module discovery when the number of modules justifies a loader.
+* [ ] Add module discovery through the ordered profiles defined by ADR-0004.
 * [ ] Extract shared logging when repeated output behavior justifies it.
 * [ ] Add a `doctor` command for complete workstation diagnostics.
 
