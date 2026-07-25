@@ -97,6 +97,13 @@ git diff --check
 rg 'apt-get|sudo|chsh' modules/zsh bootstrap.sh
 ```
 
+## Resultado
+
+Implementado. Git e Zsh agora executam `all` pelo bootstrap com
+`DEV_WORKSTATION_PACKAGE_PROVIDER=brew`. O core Homebrew instala e valida
+fórmulas explicitamente, e os testes isolados simulam `brew list`,
+`brew install`, Git e Zsh sem instalar pacotes reais.
+
 ## Validação manual
 
 Em uma máquina descartável com Homebrew preparado:

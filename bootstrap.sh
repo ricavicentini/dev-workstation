@@ -42,8 +42,7 @@ echo "======================================"
 echo " Dev Workstation Bootstrap"
 echo "======================================"
 
-bash "$ROOT_DIR/modules/git/module.sh" configure
-bash "$ROOT_DIR/modules/git/module.sh" validate
+DEV_WORKSTATION_PACKAGE_PROVIDER="$PACKAGE_PROVIDER" bash "$ROOT_DIR/modules/git/module.sh" all
 DEV_WORKSTATION_PACKAGE_PROVIDER="$PACKAGE_PROVIDER" bash "$ROOT_DIR/modules/zsh/module.sh" all
 
 echo

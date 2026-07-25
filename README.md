@@ -91,10 +91,11 @@ execute arbitrary commands.
 Current behavior:
 
 * Homebrew and the required Bash runtime are prepared from the selected profile.
-* Git configuration is applied and validated, while Git package installation
-  is still deferred.
-* Zsh is configured and validated; its package installation still uses
-  `apt-get` until the next increment migrates both technology modules to Brew.
+* Git and Zsh packages are installed and validated through Homebrew.
+* Git configuration is applied and validated through repository-managed
+  `.gitconfig` and `.gitignore_global` links.
+* Zsh configuration is applied and validated through the repository-managed
+  `.zshrc` link without changing the default shell.
 
 Run the isolated test suite with:
 
@@ -121,11 +122,8 @@ validation remain in the versioned [implementation plans](docs/plans/).
 * [x] Bootstrap and validate the currently supported Git and Zsh assets.
 * [x] Add isolated tests for core operations, modules and bootstrap integration.
 * [x] Prepare Homebrew through explicit Ubuntu and macOS profiles.
-
-## Next increment
-
-1. [ ] Manage Git and Zsh packages through Homebrew and execute `all` for both
-   modules. See [plan 0006](docs/plans/0006-homebrew-managed-git-zsh.md).
+* [x] Manage Git and Zsh packages through Homebrew and execute `all` for both
+  modules. See [plan 0006](docs/plans/0006-homebrew-managed-git-zsh.md).
 
 ## Following increments
 

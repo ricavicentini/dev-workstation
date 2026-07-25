@@ -9,12 +9,11 @@ if [[ -z "${HOME:-}" || ! -d "$HOME" ]]; then
   exit 1
 fi
 
-if ! command -v zsh >/dev/null 2>&1; then
-  printf 'Error: zsh executable was not found in PATH.\n' >&2
+printf 'Validating Zsh...\n'
+if ! bash "$ROOT_DIR/core/homebrew.sh" validate zsh zsh; then
   exit 1
 fi
 
-printf 'Validating Zsh...\n'
 if ! bash "$ROOT_DIR/core/symlink.sh" validate \
   "$ROOT_DIR/dotfiles/zsh/.zshrc" "$HOME/.zshrc"; then
   exit 1

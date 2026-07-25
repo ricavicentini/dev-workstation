@@ -7,3 +7,5 @@ elif [[ -x /opt/homebrew/bin/brew ]]; then
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
+
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

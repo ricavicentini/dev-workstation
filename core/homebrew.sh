@@ -57,6 +57,13 @@ install_homebrew() {
   return "$status"
 }
 
+formula_installed() {
+  local brew_path="$1"
+  local formula="$2"
+
+  "$brew_path" list --formula "$formula" >/dev/null 2>&1
+}
+
 ensure() {
   local prerequisites="$1"
   local bash_runtime="$2"
@@ -98,9 +105,63 @@ ensure() {
   printf '%s\n' "$brew_path"
 }
 
-if (($# != 3)) || [[ "$1" != 'ensure' ]]; then
-  printf 'Usage: homebrew.sh ensure <apt-get|installer> <system|brew>\n' >&2
-  exit 2
-fi
+install_formula() {
+  local formula="$1"
+  local brew_path
 
-ensure "$2" "$3"
+  brew_path="$(find_brew)" || { log_error 'Homebrew was not found.'; return 1; }
+  "$brew_path" --version >/dev/null || { log_error 'Homebrew is not functional.'; return 1; }
+
+  if formula_installed "$brew_path" "$formula"; then
+    printf '%s is already installed with Homebrew.\n' "$formula"
+    return 0
+  fi
+
+  printf 'Installing %s with Homebrew...\n' "$formula"
+  "$brew_path" install "$formula" || { log_error "Homebrew failed to install formula: $formula"; return 1; }
+  formula_installed "$brew_path" "$formula" || { log_error "Homebrew installation completed, but formula was not found: $formula"; return 1; }
+  printf '%s installed with Homebrew.\n' "$formula"
+}
+
+validate_formula() {
+  local formula="$1"
+  local executable="$2"
+  local brew_path
+  local brew_prefix
+  local expected_executable
+
+  brew_path="$(find_brew)" || { log_error 'Homebrew was not found.'; return 1; }
+  "$brew_path" --version >/dev/null || { log_error 'Homebrew is not functional.'; return 1; }
+  formula_installed "$brew_path" "$formula" || { log_error "Homebrew formula is not installed: $formula"; return 1; }
+
+  brew_prefix="$("$brew_path" --prefix)" || return 1
+  expected_executable="$brew_prefix/bin/$executable"
+  [[ -x "$expected_executable" ]] || { log_error "Homebrew executable was not found: $expected_executable"; return 1; }
+  command -v "$executable" >/dev/null 2>&1 || { log_error "executable was not found in PATH: $executable"; return 1; }
+}
+
+usage() {
+  printf 'Usage:\n' >&2
+  printf '  homebrew.sh ensure <apt-get|installer> <system|brew>\n' >&2
+  printf '  homebrew.sh install <formula>\n' >&2
+  printf '  homebrew.sh validate <formula> <executable>\n' >&2
+}
+
+case "${1:-}" in
+  ensure)
+    (($# == 3)) || { usage; exit 2; }
+    ensure "$2" "$3"
+    ;;
+  install)
+    (($# == 2)) || { usage; exit 2; }
+    install_formula "$2"
+    ;;
+  validate)
+    (($# == 3)) || { usage; exit 2; }
+    validate_formula "$2" "$3"
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac

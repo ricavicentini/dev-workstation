@@ -30,6 +30,27 @@ run_ensure() {
     bash "$HOMEBREW_SCRIPT" ensure "$strategy" "$runtime"
 }
 
+run_homebrew() {
+  local name="$1"
+  shift
+
+  PATH="$TEST_ROOT/$name/prefix/bin:$PATH" \
+    HOMEBREW_TEST_PREFIX="$TEST_ROOT/$name/prefix" \
+    HOMEBREW_TEST_BREW_LOG="$TEST_ROOT/$name/brew.log" \
+    HOMEBREW_TEST_INSTALL_FAIL="${HOMEBREW_TEST_INSTALL_FAIL:-}" \
+    HOMEBREW_TEST_INSTALL_WITHOUT_FORMULA="${HOMEBREW_TEST_INSTALL_WITHOUT_FORMULA:-}" \
+    HOMEBREW_TEST_ZSH_SYNTAX_STATUS="${HOMEBREW_TEST_ZSH_SYNTAX_STATUS:-0}" \
+    DEV_WORKSTATION_BREW_PATH="$TEST_ROOT/$name/prefix/bin/brew" \
+    bash "$HOMEBREW_SCRIPT" "$@"
+}
+
+prepare_homebrew() {
+  local name="$1"
+
+  mkdir -p "$TEST_ROOT/$name"
+  run_ensure installer system "$name" >/dev/null || fail "Homebrew setup failed for $name"
+}
+
 test_ubuntu_installs_prerequisites_and_homebrew() {
   local brew_path
   mkdir -p "$TEST_ROOT/ubuntu"
@@ -52,6 +73,55 @@ test_macos_skips_apt_and_installs_bash() {
   pass 'macOS strategy delegates prerequisites and installs Brew Bash'
 }
 
-printf '1..2\n'
+test_install_formula_installs_when_missing() {
+  prepare_homebrew formula-install
+
+  run_homebrew formula-install install git >/dev/null || fail 'formula installation failed'
+  [[ "$(<"$TEST_ROOT/formula-install/brew.log")" == 'brew install git' ]] || fail 'formula installation was not delegated to Brew'
+  [[ -f "$TEST_ROOT/formula-install/prefix/formula/git" ]] || fail 'installed formula was not recorded'
+  [[ -x "$TEST_ROOT/formula-install/prefix/bin/git" ]] || fail 'installed executable was not created'
+  pass 'missing formula is installed and confirmed'
+}
+
+test_install_formula_is_idempotent() {
+  prepare_homebrew formula-idempotent
+  HOMEBREW_TEST_PREFIX="$TEST_ROOT/formula-idempotent/prefix" \
+    HOMEBREW_TEST_BREW_LOG="$TEST_ROOT/formula-idempotent/brew.log" \
+    "$TEST_ROOT/formula-idempotent/prefix/bin/brew" install git >/dev/null || fail 'fixture formula setup failed'
+  rm -f "$TEST_ROOT/formula-idempotent/brew.log"
+
+  run_homebrew formula-idempotent install git >/dev/null || fail 'installed formula was not accepted'
+  [[ ! -e "$TEST_ROOT/formula-idempotent/brew.log" ]] || fail 'idempotent formula install invoked Brew'
+  pass 'installed formula does not reinstall'
+}
+
+test_validate_formula_checks_formula_executable_and_path() {
+  prepare_homebrew formula-validate
+  HOMEBREW_TEST_PREFIX="$TEST_ROOT/formula-validate/prefix" \
+    "$TEST_ROOT/formula-validate/prefix/bin/brew" install git >/dev/null || fail 'fixture formula setup failed'
+
+  run_homebrew formula-validate validate git git >/dev/null || fail 'installed formula did not validate'
+  rm -f "$TEST_ROOT/formula-validate/prefix/bin/git"
+  if run_homebrew formula-validate validate git git >/dev/null 2>&1; then
+    fail 'formula validation succeeded without the Homebrew executable'
+  fi
+  pass 'formula validation checks formula, executable and PATH'
+}
+
+test_install_formula_reports_missing_after_install() {
+  prepare_homebrew formula-missing-after-install
+
+  if HOMEBREW_TEST_INSTALL_WITHOUT_FORMULA=git \
+    run_homebrew formula-missing-after-install install git >/dev/null 2>&1; then
+    fail 'formula install succeeded without final formula confirmation'
+  fi
+  pass 'formula installation fails when Brew does not confirm the formula'
+}
+
+printf '1..6\n'
 test_ubuntu_installs_prerequisites_and_homebrew
 test_macos_skips_apt_and_installs_bash
+test_install_formula_installs_when_missing
+test_install_formula_is_idempotent
+test_validate_formula_checks_formula_executable_and_path
+test_install_formula_reports_missing_after_install

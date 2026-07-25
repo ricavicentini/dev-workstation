@@ -49,8 +49,8 @@ runner does not discover modules or contain technology-specific behavior.
 
 Profiles are selected explicitly by the bootstrap and describe the preparation
 strategy for Homebrew. They are parsed as data and do not execute shell code.
-The bootstrap still lists Git and Zsh explicitly; profile-driven module loading
-is deferred until every listed module can run `all`.
+The bootstrap still lists Git and Zsh explicitly. Profile-driven module loading
+is deferred to a later increment.
 
 ---
 
@@ -99,8 +99,9 @@ Modules should always be:
 * self-contained;
 * focused on a single responsibility.
 
-Installation capability is incremental by module. The Zsh module currently
-installs the package through the host's Debian/Ubuntu package manager and
-validates the executable plus `.zshrc` syntax. Git remains configuration-only
-until its own installation increment is implemented. No module changes the
-user's default shell automatically.
+Git and Zsh install and validate their packages through Homebrew using the
+provider selected by the active profile. A system-provided executable alone is
+not treated as an installed module; the corresponding Homebrew formula must be
+present. Git validates the formula, executable and managed Git links. Zsh
+validates the formula, executable, managed `.zshrc` link and configuration
+syntax. No module changes the user's default shell automatically.
