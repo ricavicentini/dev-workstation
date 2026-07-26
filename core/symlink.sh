@@ -92,7 +92,7 @@ preflight() {
     seen_targets["$target"]=1
 
     if [[ "$mutating" == 'true' ]]; then
-      parent="$(dirname -- "$target")" || return 1
+      parent="$(dirname "$target")" || return 1
 
       if [[ ! -d "$parent" ]]; then
         log_error "target directory does not exist: $parent"
@@ -112,7 +112,7 @@ is_expected_link() {
   local target="$2"
 
   [[ -L "$target" ]] || return 1
-  [[ "$(readlink -- "$target")" == "$source" ]]
+  [[ "$(readlink "$target")" == "$source" ]]
 }
 
 select_backup_path() {

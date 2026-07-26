@@ -56,6 +56,10 @@ names and delegates execution to `core/module-loader.sh`. The loader validates
 every declared `module.sh` entrypoint before starting the first module and then
 executes `all` sequentially.
 
+The repository is validated in GitHub Actions on native Ubuntu and macOS
+runners. This keeps GNU and BSD userland differences visible in review without
+adding platform-detection logic to the production scripts.
+
 ---
 
 # Module Lifecycle

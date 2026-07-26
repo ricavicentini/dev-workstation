@@ -23,7 +23,7 @@ printf '%s\n' '#!/bin/bash' \
   '    fi' \
   '    case "$2" in' \
   '      bash)' \
-  '        printf "#!/bin/bash\nexit 0\n" > "${HOMEBREW_TEST_PREFIX:?}/bin/bash"' \
+  '        printf "%s\n" "#!/bin/bash" "set -uo pipefail" "printf \"%s\\n\" \"\${1:-}\" >> \"\${HOMEBREW_TEST_BASH_LOG:-/dev/null}\"" "exec \"\${HOMEBREW_TEST_REAL_BASH:?}\" \"\$@\"" > "${HOMEBREW_TEST_PREFIX:?}/bin/bash"' \
   '        ;;' \
   '      git)' \
   '        printf "#!/bin/bash\nprintf '\''git version test\\n'\''\n" > "${HOMEBREW_TEST_PREFIX:?}/bin/git"' \

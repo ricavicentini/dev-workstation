@@ -55,6 +55,7 @@ This project is **not** intended to:
 ├── bootstrap.sh
 ├── core/
 │   ├── homebrew.sh
+│   ├── module-loader.sh
 │   ├── module.sh
 │   ├── profile.sh
 │   └── symlink.sh
@@ -87,7 +88,9 @@ bash bootstrap.sh macos
 
 The Homebrew installer is interactive when Homebrew is absent. Profiles are
 version-controlled data files; they do not detect the operating system or
-execute arbitrary commands.
+execute arbitrary commands. The automated test matrix validates the same flow
+on Ubuntu and macOS runners, covering GNU and BSD userland differences without
+provisioning a real workstation.
 
 Current behavior:
 
@@ -130,11 +133,12 @@ validation remain in the versioned [implementation plans](docs/plans/).
   modules. See [plan 0006](docs/plans/0006-homebrew-managed-git-zsh.md).
 * [x] Add ordered module selection and a module loader through profiles. See
   [plan 0007](docs/plans/0007-profile-module-loader.md).
+* [x] Validate GNU/BSD compatibility and add Ubuntu/macOS CI. See
+  [plan 0008](docs/plans/0008-gnu-bsd-ci.md).
 
 ## Following increments
 
-1. [ ] Validate GNU/BSD compatibility and add Ubuntu/macOS CI.
-2. [ ] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
+1. [ ] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
 
 ## Planned capabilities
 
@@ -150,6 +154,7 @@ validation remain in the versioned [implementation plans](docs/plans/).
 
 * [x] Add ordered module selection and a module loader through the explicit
   profiles defined by ADR-0004.
+* [x] Continuously validate the repository on Ubuntu and macOS runners.
 * [ ] Extract shared logging when repeated output behavior justifies it.
 * [ ] Add a `doctor` command for complete workstation diagnostics.
 

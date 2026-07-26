@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Bash on macOS
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: brew install bash
+
+      - name: Prefer Homebrew Bash on macOS
+        if: runner.os == 'macOS'
+        run: echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+
+      - name: Run test suite
+        run: bash tests/run.sh
+
+      - name: Check Bash syntax
+        run: find . -type f -name '*.sh' -exec bash -n {} +
+
+      - name: Check diff formatting
+        run: git diff --check
+
+      - name: Ensure clean worktree
+        run: test -z "$(git status --short)"

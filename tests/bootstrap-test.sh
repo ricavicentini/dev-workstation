@@ -5,8 +5,10 @@ set -uo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BOOTSTRAP="$ROOT_DIR/bootstrap.sh"
 FIXTURE_BIN="$ROOT_DIR/tests/fixtures/bin"
+FIXTURE_INSTALLER="$ROOT_DIR/tests/fixtures/homebrew-installer.sh"
 TEST_ROOT="$(mktemp -d)"
 TEST_COUNT=0
+REAL_BASH="$(command -v bash)"
 
 cleanup() { rm -rf -- "$TEST_ROOT"; }
 trap cleanup EXIT
@@ -40,7 +42,43 @@ test_bootstrap_uses_profile_loader_instead_of_hardcoded_modules() {
   pass 'bootstrap delegates module execution to the profile-driven loader'
 }
 
-printf '1..3\n'
+test_macos_profile_reexecs_with_brew_bash_before_modules() {
+  local home="$TEST_ROOT/macos-home"
+  local output="$TEST_ROOT/macos-output"
+  local homebrew_root="$TEST_ROOT/macos-homebrew"
+  local bash_log="$TEST_ROOT/macos-bash.log"
+
+  mkdir -p "$home" "$homebrew_root/bin"
+  cp "$FIXTURE_BIN/curl" "$FIXTURE_BIN/sudo" "$homebrew_root/bin"
+  chmod +x "$homebrew_root/bin/curl" "$homebrew_root/bin/sudo"
+
+  HOME="$home" \
+    PATH="$homebrew_root/bin:$homebrew_root/prefix/bin:$PATH" \
+    HOMEBREW_TEST_PREFIX="$homebrew_root/prefix" \
+    HOMEBREW_TEST_CURL_LOG="$homebrew_root/curl.log" \
+    HOMEBREW_TEST_INSTALL_LOG="$homebrew_root/install.log" \
+    HOMEBREW_TEST_INSTALLER="$FIXTURE_INSTALLER" \
+    HOMEBREW_TEST_BREW_LOG="$homebrew_root/brew.log" \
+    HOMEBREW_TEST_REAL_BASH="$REAL_BASH" \
+    HOMEBREW_TEST_BASH_LOG="$bash_log" \
+    DEV_WORKSTATION_BREW_PATH="$homebrew_root/prefix/bin/brew" \
+    /bin/bash "$BOOTSTRAP" macos >"$output" || fail 'macOS bootstrap failed'
+
+  [[ -x "$homebrew_root/prefix/bin/bash" ]] || fail 'macOS bootstrap did not provision Brew Bash'
+  if [[ "$(/bin/bash -c 'printf %s "${BASH_VERSINFO[0]}"')" -lt 4 ]]; then
+    [[ -f "$bash_log" ]] || fail 'macOS bootstrap did not re-exec through Brew Bash'
+    grep -Fxq "$ROOT_DIR/bootstrap.sh" "$bash_log" || fail 'macOS bootstrap did not re-exec through Brew Bash'
+  else
+    grep -Fxq "$ROOT_DIR/bootstrap.sh" "$bash_log" && fail 'bootstrap re-execed unexpectedly on modern /bin/bash'
+  fi
+
+  grep -q '^Installing git with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not start modules after Bash preparation'
+  grep -q '^Installing zsh with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not complete ordered module execution'
+  pass 'macOS bootstrap prepares Brew Bash before modules when required'
+}
+
+printf '1..4\n'
 test_invalid_usage_does_not_install
 test_missing_profile_does_not_install
 test_bootstrap_uses_profile_loader_instead_of_hardcoded_modules
+test_macos_profile_reexecs_with_brew_bash_before_modules
