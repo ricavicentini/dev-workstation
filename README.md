@@ -135,10 +135,15 @@ validation remain in the versioned [implementation plans](docs/plans/).
   [plan 0007](docs/plans/0007-profile-module-loader.md).
 * [x] Validate GNU/BSD compatibility and add Ubuntu/macOS CI. See
   [plan 0008](docs/plans/0008-gnu-bsd-ci.md).
+* [x] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
+  See
+  [plan 0009](docs/plans/0009-homebrew-reproducibility-assessment.md).
 
 ## Following increments
 
-1. [ ] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
+1. [ ] Explore and prioritize the next technology-owned modules.
+2. [ ] Pin the Homebrew installer by immutable revision and checksum when
+   revisiting plan 0009.
 
 ## Planned capabilities
 
