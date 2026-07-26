@@ -13,9 +13,9 @@
                   core/module-loader.sh
                 ┌─────────────┴─────────────┐
                 ▼                           ▼
-        modules/git/module.sh     modules/zsh/module.sh
-                │                           │
-                └─────────────┬─────────────┘
+        modules/git/module.sh     modules/zsh/module.sh     modules/github-cli/module.sh
+                │                           │                           │
+                └─────────────┬─────────────┴──────────────┬────────────┘
                               ▼
                         core/module.sh
                               │
@@ -41,10 +41,11 @@
 | **modules**   | Installation, configuration and validation of a single technology.                          |
 | **dotfiles**  | Version-controlled assets owned by their corresponding technology modules.                  |
 
-Git and Zsh are independently executable technology modules, as defined by
-[ADR-0003](adr/0003-technology-owned-modules.md). Their entrypoints identify the
-module directory and delegate lifecycle dispatch to `core/module.sh`. The
-runner does not discover modules or contain technology-specific behavior.
+Git, Zsh and GitHub CLI are independently executable technology modules, as
+defined by [ADR-0003](adr/0003-technology-owned-modules.md). Their entrypoints
+identify the module directory and delegate lifecycle dispatch to
+`core/module.sh`. The runner does not discover modules or contain
+technology-specific behavior.
 
 Profiles are selected explicitly by the bootstrap and describe the preparation
 strategy for Homebrew plus the ordered module list. They are parsed as data and
@@ -108,9 +109,10 @@ Modules should always be:
 * self-contained;
 * focused on a single responsibility.
 
-Git and Zsh install and validate their packages through Homebrew using the
-provider selected by the active profile. A system-provided executable alone is
-not treated as an installed module; the corresponding Homebrew formula must be
-present. Git validates the formula, executable and managed Git links. Zsh
-validates the formula, executable, managed `.zshrc` link and configuration
-syntax. No module changes the user's default shell automatically.
+Git, Zsh and GitHub CLI install and validate their packages through Homebrew
+using the provider selected by the active profile. A system-provided executable
+alone is not treated as an installed module; the corresponding Homebrew formula
+must be present. Git validates the formula, executable and managed Git links.
+Zsh validates the formula, executable, managed `.zshrc` link and configuration
+syntax. GitHub CLI validates the formula and executable without changing local
+authentication state. No module changes the user's default shell automatically.

@@ -74,9 +74,9 @@ This project is **not** intended to:
 └── scripts/
 ```
 
-Git and Zsh are organized as independent technology modules. Their public
-entrypoints delegate lifecycle orchestration to `core/module.sh`, while phase
-scripts retain technology-specific behavior. Bootstrap uses an explicit
+Git, Zsh and GitHub CLI are organized as independent technology modules. Their
+public entrypoints delegate lifecycle orchestration to `core/module.sh`, while
+phase scripts retain technology-specific behavior. Bootstrap uses an explicit
 profile to prepare Homebrew and load the ordered module list before
 configuring the current modules:
 
@@ -103,6 +103,7 @@ Current behavior:
   `.gitconfig` and `.gitignore_global` links.
 * Zsh configuration is applied and validated through the repository-managed
   `.zshrc` link without changing the default shell.
+* GitHub CLI is installed and validated without changing authentication state.
 
 Run the isolated test suite with:
 
@@ -138,6 +139,8 @@ validation remain in the versioned [implementation plans](docs/plans/).
 * [x] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
   See
   [plan 0009](docs/plans/0009-homebrew-reproducibility-assessment.md).
+* [x] Add GitHub CLI as a technology-owned module. See
+  [plan 0010](docs/plans/0010-github-cli-module.md).
 
 ## Following increments
 
@@ -149,7 +152,6 @@ validation remain in the versioned [implementation plans](docs/plans/).
 
 * [ ] Configure Oh My Posh.
 * [ ] Install Nerd Fonts.
-* [ ] Install GitHub CLI.
 * [ ] Install SDKMAN!
 * [ ] Install Java, Kotlin and Gradle.
 * [ ] Configure VS Code.

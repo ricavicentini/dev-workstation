@@ -22,11 +22,11 @@ write_profile() {
 
 test_valid_profile() {
   local profile
-  profile="$(write_profile valid 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system' 'module=git' 'module=zsh')"
+  profile="$(write_profile valid 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system' 'module=git' 'module=zsh' 'module=github-cli')"
 
   bash "$PROFILE_SCRIPT" validate "$profile" || fail 'valid profile was rejected'
   [[ "$(bash "$PROFILE_SCRIPT" get "$profile" package_provider)" == brew ]] || fail 'profile value was not returned'
-  [[ "$(bash "$PROFILE_SCRIPT" modules "$profile")" == $'git\nzsh' ]] || fail 'profile modules were not returned in declaration order'
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$profile")" == $'git\nzsh\ngithub-cli' ]] || fail 'profile modules were not returned in declaration order'
   pass 'valid profile is accepted and preserves module order'
 }
 
@@ -48,13 +48,13 @@ test_invalid_profiles() {
   pass 'invalid profiles fail before use'
 }
 
-test_real_profiles_declare_git_then_zsh() {
-  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/ubuntu.conf")" == $'git\nzsh' ]] || fail 'ubuntu profile modules differ from git then zsh'
-  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/macos.conf")" == $'git\nzsh' ]] || fail 'macos profile modules differ from git then zsh'
-  pass 'real profiles declare git and zsh in order'
+test_real_profiles_declare_git_zsh_then_github_cli() {
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/ubuntu.conf")" == $'git\nzsh\ngithub-cli' ]] || fail 'ubuntu profile modules differ from git then zsh then github-cli'
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/macos.conf")" == $'git\nzsh\ngithub-cli' ]] || fail 'macos profile modules differ from git then zsh then github-cli'
+  pass 'real profiles declare git, zsh and github-cli in order'
 }
 
 printf '1..3\n'
 test_valid_profile
 test_invalid_profiles
-test_real_profiles_declare_git_then_zsh
+test_real_profiles_declare_git_zsh_then_github_cli

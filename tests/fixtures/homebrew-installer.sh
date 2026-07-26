@@ -28,6 +28,9 @@ printf '%s\n' '#!/bin/bash' \
   '      git)' \
   '        printf "#!/bin/bash\nprintf '\''git version test\\n'\''\n" > "${HOMEBREW_TEST_PREFIX:?}/bin/git"' \
   '        ;;' \
+  '      gh)' \
+  '        printf "#!/bin/bash\nif [[ \"\${1:-}\" == '\''--version'\'' ]]; then printf '\''gh version test\\n'\''; else printf '\''gh test\\n'\''; fi\n" > "${HOMEBREW_TEST_PREFIX:?}/bin/gh"' \
+  '        ;;' \
   '      zsh)' \
   '        printf "#!/bin/bash\nif [[ \"\${1:-}\" == '\''-n'\'' ]]; then exit \"\${HOMEBREW_TEST_ZSH_SYNTAX_STATUS:-0}\"; fi\nprintf '\''zsh test\\n'\''\n" > "${HOMEBREW_TEST_PREFIX:?}/bin/zsh"' \
   '        ;;' \

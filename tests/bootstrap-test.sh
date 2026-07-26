@@ -74,6 +74,7 @@ test_macos_profile_reexecs_with_brew_bash_before_modules() {
 
   grep -q '^Installing git with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not start modules after Bash preparation'
   grep -q '^Installing zsh with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not complete ordered module execution'
+  grep -q '^Installing gh with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not reach GitHub CLI module'
   pass 'macOS bootstrap prepares Brew Bash before modules when required'
 }
 

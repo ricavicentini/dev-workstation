@@ -5,6 +5,7 @@ set -uo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GIT_MODULE="$ROOT_DIR/modules/git/module.sh"
 ZSH_MODULE="$ROOT_DIR/modules/zsh/module.sh"
+GITHUB_CLI_MODULE="$ROOT_DIR/modules/github-cli/module.sh"
 BOOTSTRAP="$ROOT_DIR/bootstrap.sh"
 FIXTURE_BIN="$ROOT_DIR/tests/fixtures/bin"
 FIXTURE_INSTALLER="$ROOT_DIR/tests/fixtures/homebrew-installer.sh"
@@ -115,6 +116,18 @@ test_zsh_module_owns_only_zsh() {
   pass 'Zsh module owns only .zshrc'
 }
 
+test_github_cli_module_owns_no_dotfiles() {
+  local home
+  home="$(new_home github-cli-ownership)"
+  setup_homebrew github-cli-ownership-brew
+  install_formula_fixture github-cli-ownership-brew gh
+
+  HOME="$home" bash "$GITHUB_CLI_MODULE" configure >/dev/null || fail 'GitHub CLI configuration failed'
+  HOME="$home" with_homebrew github-cli-ownership-brew bash "$GITHUB_CLI_MODULE" validate >/dev/null || fail 'GitHub CLI validation failed'
+  [[ -z "$(find "$home" -mindepth 1 -maxdepth 1 -print -quit)" ]] || fail 'GitHub CLI module changed HOME'
+  pass 'GitHub CLI module owns no dotfiles'
+}
+
 test_zsh_install_is_idempotent_when_present() {
   local home
   home="$(new_home zsh-installed)"
@@ -186,6 +199,29 @@ test_git_install_fails_without_brew_provider() {
   fi
   [[ -z "$(find "$home" -mindepth 1 -maxdepth 1 -print -quit)" ]] || fail 'failed Git installation changed HOME'
   pass 'Git installation fails before mutation without the Brew provider'
+}
+
+test_github_cli_install_uses_homebrew_when_absent() {
+  local home
+  home="$(new_home github-cli-install)"
+  setup_homebrew github-cli-install-brew
+
+  HOME="$home" DEV_WORKSTATION_PACKAGE_PROVIDER=brew \
+    with_homebrew github-cli-install-brew "$REAL_BASH" "$ROOT_DIR/modules/github-cli/install.sh" >/dev/null || fail 'controlled GitHub CLI installation failed'
+  [[ "$(<"$TEST_ROOT/github-cli-install-brew/brew.log")" == 'brew install gh' ]] || fail 'GitHub CLI installation did not invoke Brew'
+  [[ -x "$TEST_ROOT/github-cli-install-brew/prefix/bin/gh" ]] || fail 'controlled installation did not provide gh'
+  pass 'GitHub CLI installation invokes Homebrew when the formula is absent'
+}
+
+test_github_cli_install_fails_without_brew_provider() {
+  local home
+  home="$(new_home github-cli-no-provider)"
+
+  if HOME="$home" "$REAL_BASH" "$ROOT_DIR/modules/github-cli/install.sh" >/dev/null 2>&1; then
+    fail 'GitHub CLI installation succeeded without the Brew provider'
+  fi
+  [[ -z "$(find "$home" -mindepth 1 -maxdepth 1 -print -quit)" ]] || fail 'failed GitHub CLI installation changed HOME'
+  pass 'GitHub CLI installation fails before mutation without the Brew provider'
 }
 
 test_git_configuration_is_idempotent_and_preserves_existing_files() {
@@ -284,11 +320,14 @@ test_bootstrap_configures_all_assets() {
   grep -q '^Installing zsh with Homebrew\.\.\.$' "$output" || fail 'bootstrap did not identify Zsh installation'
   grep -q '^Configuring Zsh\.\.\.$' "$output" || fail 'bootstrap did not identify Zsh configuration'
   grep -q '^Zsh validated\.$' "$output" || fail 'bootstrap did not identify Zsh validation'
-  [[ "$(<"$homebrew_root/brew.log")" == $'brew install git\nbrew install zsh' ]] || fail 'bootstrap did not install Git before Zsh'
+  grep -q '^Installing gh with Homebrew\.\.\.$' "$output" || fail 'bootstrap did not identify GitHub CLI installation'
+  grep -q '^Configuring GitHub CLI\.\.\.$' "$output" || fail 'bootstrap did not identify GitHub CLI configuration'
+  grep -q '^GitHub CLI validated\.$' "$output" || fail 'bootstrap did not identify GitHub CLI validation'
+  [[ "$(<"$homebrew_root/brew.log")" == $'brew install git\nbrew install zsh\nbrew install gh' ]] || fail 'bootstrap did not install Git before Zsh before GitHub CLI'
   if grep -q '^Symbolic links ' "$output"; then
     fail 'bootstrap exposed generic core success messages'
   fi
-  pass 'bootstrap configures and validates Git before Zsh'
+  pass 'bootstrap configures and validates Git before Zsh before GitHub CLI'
 }
 
 test_bootstrap_git_failure_skips_zsh() {
@@ -315,10 +354,10 @@ test_bootstrap_git_failure_skips_zsh() {
     fail 'bootstrap succeeded after Git installation failure'
   fi
 
-  [[ "$(<"$homebrew_root/brew.log")" == 'brew install git' ]] || fail 'Git failure did not stop before Zsh installation'
+  [[ "$(<"$homebrew_root/brew.log")" == 'brew install git' ]] || fail 'Git failure did not stop before following module installation'
   [[ ! -e "$home/.gitconfig" && ! -L "$home/.gitconfig" ]] || fail 'failed Git install configured Git'
   [[ ! -e "$home/.zshrc" && ! -L "$home/.zshrc" ]] || fail 'Git failure reached Zsh'
-  pass 'Git failure prevents any Zsh phase'
+  pass 'Git failure prevents later modules'
 }
 
 test_zsh_failure_keeps_validated_git() {
@@ -348,15 +387,18 @@ test_zsh_failure_keeps_validated_git() {
   pass 'Zsh failure does not undo the validated Git module'
 }
 
-printf '1..13\n'
+printf '1..16\n'
 test_git_module_owns_only_git
 test_zsh_module_owns_only_zsh
+test_github_cli_module_owns_no_dotfiles
 test_zsh_install_is_idempotent_when_present
 test_zsh_install_uses_homebrew_when_absent
 test_zsh_install_fails_without_brew_provider
 test_zsh_validation_checks_syntax
 test_git_install_uses_homebrew_when_absent
 test_git_install_fails_without_brew_provider
+test_github_cli_install_uses_homebrew_when_absent
+test_github_cli_install_fails_without_brew_provider
 test_git_configuration_is_idempotent_and_preserves_existing_files
 test_git_failure_rolls_back_both_targets
 test_bootstrap_configures_all_assets
