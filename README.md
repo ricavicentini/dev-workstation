@@ -76,7 +76,8 @@ This project is **not** intended to:
 Git and Zsh are organized as independent technology modules. Their public
 entrypoints delegate lifecycle orchestration to `core/module.sh`, while phase
 scripts retain technology-specific behavior. Bootstrap uses an explicit
-profile to prepare Homebrew before configuring the current modules:
+profile to prepare Homebrew and load the ordered module list before
+configuring the current modules:
 
 ```bash
 bash bootstrap.sh ubuntu
@@ -91,7 +92,10 @@ execute arbitrary commands.
 Current behavior:
 
 * Homebrew and the required Bash runtime are prepared from the selected profile.
-* Git and Zsh packages are installed and validated through Homebrew.
+* Profiles declare the ordered module list through repeated `module=<name>`
+  entries.
+* Bootstrap preflights the declared module entrypoints and executes `all` for
+  each module in profile order.
 * Git configuration is applied and validated through repository-managed
   `.gitconfig` and `.gitignore_global` links.
 * Zsh configuration is applied and validated through the repository-managed
@@ -124,12 +128,13 @@ validation remain in the versioned [implementation plans](docs/plans/).
 * [x] Prepare Homebrew through explicit Ubuntu and macOS profiles.
 * [x] Manage Git and Zsh packages through Homebrew and execute `all` for both
   modules. See [plan 0006](docs/plans/0006-homebrew-managed-git-zsh.md).
+* [x] Add ordered module selection and a module loader through profiles. See
+  [plan 0007](docs/plans/0007-profile-module-loader.md).
 
 ## Following increments
 
-1. [ ] Add ordered module selection and a module loader through profiles.
-2. [ ] Validate GNU/BSD compatibility and add Ubuntu/macOS CI.
-3. [ ] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
+1. [ ] Validate GNU/BSD compatibility and add Ubuntu/macOS CI.
+2. [ ] Evaluate formula versioning, Brewfile and a pinned Homebrew installer.
 
 ## Planned capabilities
 
@@ -143,7 +148,8 @@ validation remain in the versioned [implementation plans](docs/plans/).
 
 ## Architecture evolution
 
-* [ ] Add module discovery through the ordered profiles defined by ADR-0004.
+* [x] Add ordered module selection and a module loader through the explicit
+  profiles defined by ADR-0004.
 * [ ] Extract shared logging when repeated output behavior justifies it.
 * [ ] Add a `doctor` command for complete workstation diagnostics.
 

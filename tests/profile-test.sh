@@ -22,25 +22,39 @@ write_profile() {
 
 test_valid_profile() {
   local profile
-  profile="$(write_profile valid 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system')"
+  profile="$(write_profile valid 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system' 'module=git' 'module=zsh')"
 
   bash "$PROFILE_SCRIPT" validate "$profile" || fail 'valid profile was rejected'
   [[ "$(bash "$PROFILE_SCRIPT" get "$profile" package_provider)" == brew ]] || fail 'profile value was not returned'
-  pass 'valid profile is accepted and queried'
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$profile")" == $'git\nzsh' ]] || fail 'profile modules were not returned in declaration order'
+  pass 'valid profile is accepted and preserves module order'
 }
 
 test_invalid_profiles() {
-  local duplicate unknown missing
-  duplicate="$(write_profile duplicate 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'package_provider=brew' 'bash_runtime=system')"
-  unknown="$(write_profile unknown 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system' 'module=zsh')"
-  missing="$(write_profile missing 'homebrew_prerequisites=apt-get' 'package_provider=brew')"
+  local duplicate duplicate_module unknown missing required_module invalid_module
+  duplicate="$(write_profile duplicate 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'package_provider=brew' 'bash_runtime=system' 'module=git')"
+  duplicate_module="$(write_profile duplicate-module 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system' 'module=git' 'module=git')"
+  unknown="$(write_profile unknown 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system' 'module=git' 'unexpected=value')"
+  missing="$(write_profile missing 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'module=git')"
+  required_module="$(write_profile missing-module 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system')"
+  invalid_module="$(write_profile invalid-module 'homebrew_prerequisites=apt-get' 'package_provider=brew' 'bash_runtime=system' 'module=Git')"
 
   bash "$PROFILE_SCRIPT" validate "$duplicate" >/dev/null 2>&1 && fail 'duplicate profile key was accepted'
+  bash "$PROFILE_SCRIPT" validate "$duplicate_module" >/dev/null 2>&1 && fail 'duplicate profile module was accepted'
   bash "$PROFILE_SCRIPT" validate "$unknown" >/dev/null 2>&1 && fail 'unknown profile key was accepted'
   bash "$PROFILE_SCRIPT" validate "$missing" >/dev/null 2>&1 && fail 'missing profile key was accepted'
+  bash "$PROFILE_SCRIPT" validate "$required_module" >/dev/null 2>&1 && fail 'profile without modules was accepted'
+  bash "$PROFILE_SCRIPT" validate "$invalid_module" >/dev/null 2>&1 && fail 'invalid module name was accepted'
   pass 'invalid profiles fail before use'
 }
 
-printf '1..2\n'
+test_real_profiles_declare_git_then_zsh() {
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/ubuntu.conf")" == $'git\nzsh' ]] || fail 'ubuntu profile modules differ from git then zsh'
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/macos.conf")" == $'git\nzsh' ]] || fail 'macos profile modules differ from git then zsh'
+  pass 'real profiles declare git and zsh in order'
+}
+
+printf '1..3\n'
 test_valid_profile
 test_invalid_profiles
+test_real_profiles_declare_git_then_zsh

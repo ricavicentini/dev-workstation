@@ -6,6 +6,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROFILE_DIR="$ROOT_DIR/profiles"
 PROFILE_SCRIPT="$ROOT_DIR/core/profile.sh"
 HOMEBREW_SCRIPT="$ROOT_DIR/core/homebrew.sh"
+MODULE_LOADER_SCRIPT="$ROOT_DIR/core/module-loader.sh"
+MODULES_DIR="$ROOT_DIR/modules"
 
 usage() {
   printf 'Usage: bootstrap.sh <ubuntu|macos>\n' >&2
@@ -13,6 +15,24 @@ usage() {
 
 log_error() {
   printf 'Error: %s\n' "$*" >&2
+}
+
+load_modules() {
+  local profile_file="$1"
+  local module_name
+  local -a modules=()
+
+  while IFS= read -r module_name; do
+    [[ -n "$module_name" ]] || continue
+    modules+=("$module_name")
+  done < <(bash "$PROFILE_SCRIPT" modules "$profile_file")
+
+  ((${#modules[@]} > 0)) || {
+    log_error "profile did not return any modules: $profile_file"
+    return 1
+  }
+
+  printf '%s\n' "${modules[@]}"
 }
 
 if (($# != 1)) || [[ ! "$1" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
@@ -42,8 +62,14 @@ echo "======================================"
 echo " Dev Workstation Bootstrap"
 echo "======================================"
 
-DEV_WORKSTATION_PACKAGE_PROVIDER="$PACKAGE_PROVIDER" bash "$ROOT_DIR/modules/git/module.sh" all
-DEV_WORKSTATION_PACKAGE_PROVIDER="$PACKAGE_PROVIDER" bash "$ROOT_DIR/modules/zsh/module.sh" all
+MODULES=()
+while IFS= read -r MODULE_NAME; do
+  [[ -n "$MODULE_NAME" ]] || continue
+  MODULES+=("$MODULE_NAME")
+done < <(load_modules "$PROFILE_FILE")
+
+DEV_WORKSTATION_PACKAGE_PROVIDER="$PACKAGE_PROVIDER" \
+  bash "$MODULE_LOADER_SCRIPT" "$MODULES_DIR" "${MODULES[@]}"
 
 echo
 echo "Bootstrap completed."

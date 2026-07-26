@@ -34,6 +34,13 @@ test_missing_profile_does_not_install() {
   pass 'bootstrap validates the profile before provisioning'
 }
 
-printf '1..2\n'
+test_bootstrap_uses_profile_loader_instead_of_hardcoded_modules() {
+  grep -q 'core/module-loader\.sh' "$BOOTSTRAP" || fail 'bootstrap does not use the module loader'
+  grep -Eq 'modules/(git|zsh)/module\.sh' "$BOOTSTRAP" && fail 'bootstrap still references Git or Zsh entrypoints directly'
+  pass 'bootstrap delegates module execution to the profile-driven loader'
+}
+
+printf '1..3\n'
 test_invalid_usage_does_not_install
 test_missing_profile_does_not_install
+test_bootstrap_uses_profile_loader_instead_of_hardcoded_modules

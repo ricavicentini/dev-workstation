@@ -5,13 +5,12 @@
                               │
                               ▼
                          bootstrap.sh
+                ┌─────────────┴─────────────┐
+                ▼                           ▼
+                    core/profile.sh         core/homebrew.sh
                               │
                               ▼
-                    core/profile.sh
-                              │
-                              ▼
-                   core/homebrew.sh
-                              │
+                  core/module-loader.sh
                 ┌─────────────┴─────────────┐
                 ▼                           ▼
         modules/git/module.sh     modules/zsh/module.sh
@@ -38,7 +37,7 @@
 | ------------- | ------------------------------------------------------------------------------------------- |
 | **bootstrap** | Entry point responsible for orchestrating the setup.                                        |
 | **core**      | Shared lifecycle orchestration and transactional symlink infrastructure.                     |
-| **profiles**  | Explicit workstation preparation strategies consumed by the bootstrap.                       |
+| **profiles**  | Explicit workstation preparation strategies and ordered module selection consumed by the bootstrap. |
 | **modules**   | Installation, configuration and validation of a single technology.                          |
 | **dotfiles**  | Version-controlled assets owned by their corresponding technology modules.                  |
 
@@ -48,9 +47,14 @@ module directory and delegate lifecycle dispatch to `core/module.sh`. The
 runner does not discover modules or contain technology-specific behavior.
 
 Profiles are selected explicitly by the bootstrap and describe the preparation
-strategy for Homebrew. They are parsed as data and do not execute shell code.
-The bootstrap still lists Git and Zsh explicitly. Profile-driven module loading
-is deferred to a later increment.
+strategy for Homebrew plus the ordered module list. They are parsed as data and
+do not execute shell code.
+
+The bootstrap prepares Homebrew first, re-executes itself with the required
+Bash runtime when necessary, then asks `core/profile.sh` for the ordered module
+names and delegates execution to `core/module-loader.sh`. The loader validates
+every declared `module.sh` entrypoint before starting the first module and then
+executes `all` sequentially.
 
 ---
 
@@ -81,8 +85,9 @@ modules/zsh/
 
 The internal lifecycle runner validates the required phase scripts before
 execution. For `all`, it verifies every phase before running them in
-`install`, `configure`, `validate` order and stops at the first failure. This
-shared dispatch is distinct from module discovery, which remains deferred.
+`install`, `configure`, `validate` order and stops at the first failure.
+Profile-driven selection is explicit configuration, not discovery from the
+contents of `modules/`.
 
 Configuration remains transactional until validation succeeds. If a module
 fails or is interrupted while configuring the workstation, it restores the

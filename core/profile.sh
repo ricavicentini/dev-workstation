@@ -3,7 +3,7 @@
 set -uo pipefail
 
 usage() {
-  printf 'Usage: profile.sh <validate|get> <profile-file> [key]\n' >&2
+  printf 'Usage: profile.sh <validate|get|modules> <profile-file> [key]\n' >&2
 }
 
 log_error() {
@@ -17,7 +17,9 @@ validate_profile() {
   local value
   local -a required_keys=(homebrew_prerequisites package_provider bash_runtime)
   local -a seen_keys=()
+  local -a seen_modules=()
   local required_key
+  local module_seen=0
 
   [[ -f "$profile_file" && -r "$profile_file" ]] || {
     log_error "profile is not readable: $profile_file"
@@ -39,16 +41,35 @@ validate_profile() {
       return 1
     fi
 
-    for required_key in "${seen_keys[@]}"; do
-      if [[ "$required_key" == "$key" ]]; then
-        log_error "profile key is duplicated: $key"
+    if [[ "$key" == 'module' ]]; then
+      if [[ ! "$value" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+        log_error "invalid profile entry: $line"
         return 1
       fi
-    done
-    seen_keys+=("$key")
+
+      for required_key in "${seen_modules[@]}"; do
+        if [[ "$required_key" == "$value" ]]; then
+          log_error "profile module is duplicated: $value"
+          return 1
+        fi
+      done
+
+      seen_modules+=("$value")
+      module_seen=1
+    else
+      for required_key in "${seen_keys[@]}"; do
+        if [[ "$required_key" == "$key" ]]; then
+          log_error "profile key is duplicated: $key"
+          return 1
+        fi
+      done
+      seen_keys+=("$key")
+    fi
 
     case "$key:$value" in
       homebrew_prerequisites:apt-get|homebrew_prerequisites:installer|package_provider:brew|bash_runtime:system|bash_runtime:brew)
+        ;;
+      module:*)
         ;;
       homebrew_prerequisites:*|package_provider:*|bash_runtime:*)
         log_error "unsupported value for $key: $value"
@@ -62,6 +83,11 @@ validate_profile() {
 
   done < "$profile_file"
 
+  if ((module_seen == 0)); then
+    log_error 'profile requires at least one module'
+    return 1
+  fi
+
   for required_key in "${required_keys[@]}"; do
     local key_seen=0
     for key in "${seen_keys[@]}"; do
@@ -73,6 +99,18 @@ validate_profile() {
     fi
   done
 
+}
+
+list_modules() {
+  local profile_file="$1"
+  local line
+
+  validate_profile "$profile_file" || return 1
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" == \#* || "$line" != module=* ]] && continue
+    printf '%s\n' "${line#*=}"
+  done < "$profile_file"
 }
 
 get_value() {
@@ -112,6 +150,10 @@ main() {
     get)
       (($# == 3)) || { usage; return 2; }
       get_value "$profile_file" "$3"
+      ;;
+    modules)
+      (($# == 2)) || { usage; return 2; }
+      list_modules "$profile_file"
       ;;
     *)
       usage
