@@ -6,6 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BOOTSTRAP="$ROOT_DIR/bootstrap.sh"
 FIXTURE_BIN="$ROOT_DIR/tests/fixtures/bin"
 FIXTURE_INSTALLER="$ROOT_DIR/tests/fixtures/homebrew-installer.sh"
+SDKMAN_FIXTURE_INSTALLER="$ROOT_DIR/tests/fixtures/sdkman-installer.sh"
 TEST_ROOT="$(mktemp -d)"
 TEST_COUNT=0
 REAL_BASH="$(command -v bash)"
@@ -59,6 +60,10 @@ test_macos_profile_reexecs_with_brew_bash_before_modules() {
     HOMEBREW_TEST_INSTALL_LOG="$homebrew_root/install.log" \
     HOMEBREW_TEST_INSTALLER="$FIXTURE_INSTALLER" \
     HOMEBREW_TEST_BREW_LOG="$homebrew_root/brew.log" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$homebrew_root/sdkman-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$homebrew_root/sdkman-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$homebrew_root/sdkman.log" \
     HOMEBREW_TEST_REAL_BASH="$REAL_BASH" \
     HOMEBREW_TEST_BASH_LOG="$bash_log" \
     DEV_WORKSTATION_BREW_PATH="$homebrew_root/prefix/bin/brew" \
@@ -75,6 +80,7 @@ test_macos_profile_reexecs_with_brew_bash_before_modules() {
   grep -q '^Installing git with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not start modules after Bash preparation'
   grep -q '^Installing zsh with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not complete ordered module execution'
   grep -q '^Installing gh with Homebrew\.\.\.$' "$output" || fail 'macOS bootstrap did not reach GitHub CLI module'
+  grep -q '^Installing Java with SDKMAN\.\.\.$' "$output" || fail 'macOS bootstrap did not reach Java module'
   pass 'macOS bootstrap prepares Brew Bash before modules when required'
 }
 

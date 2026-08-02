@@ -9,3 +9,7 @@ elif [[ -x /usr/local/bin/brew ]]; then
 fi
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+if [[ -s "${SDKMAN_DIR:-$HOME/.sdkman}/bin/sdkman-init.sh" ]]; then
+  source "${SDKMAN_DIR:-$HOME/.sdkman}/bin/sdkman-init.sh"
+fi

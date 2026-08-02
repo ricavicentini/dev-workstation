@@ -48,13 +48,13 @@ test_invalid_profiles() {
   pass 'invalid profiles fail before use'
 }
 
-test_real_profiles_declare_git_zsh_then_github_cli() {
-  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/ubuntu.conf")" == $'git\nzsh\ngithub-cli' ]] || fail 'ubuntu profile modules differ from git then zsh then github-cli'
-  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/macos.conf")" == $'git\nzsh\ngithub-cli' ]] || fail 'macos profile modules differ from git then zsh then github-cli'
-  pass 'real profiles declare git, zsh and github-cli in order'
+test_real_profiles_declare_git_zsh_github_cli_then_java() {
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/ubuntu.conf")" == $'git\nzsh\ngithub-cli\njava' ]] || fail 'ubuntu profile modules differ from git then zsh then github-cli then java'
+  [[ "$(bash "$PROFILE_SCRIPT" modules "$ROOT_DIR/profiles/macos.conf")" == $'git\nzsh\ngithub-cli\njava' ]] || fail 'macos profile modules differ from git then zsh then github-cli then java'
+  pass 'real profiles declare git, zsh, github-cli and java in order'
 }
 
 printf '1..3\n'
 test_valid_profile
 test_invalid_profiles
-test_real_profiles_declare_git_zsh_then_github_cli
+test_real_profiles_declare_git_zsh_github_cli_then_java

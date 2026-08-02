@@ -64,6 +64,8 @@ This project is **not** intended to:
 │   └── zsh/
 ├── modules/
 │   ├── git/
+│   ├── github-cli/
+│   ├── java/
 │   └── zsh/
 ├── profiles/
 │   ├── macos.conf
@@ -74,10 +76,10 @@ This project is **not** intended to:
 └── scripts/
 ```
 
-Git, Zsh and GitHub CLI are organized as independent technology modules. Their
-public entrypoints delegate lifecycle orchestration to `core/module.sh`, while
-phase scripts retain technology-specific behavior. Bootstrap uses an explicit
-profile to prepare Homebrew and load the ordered module list before
+Git, Zsh, GitHub CLI and Java are organized as independent technology modules.
+Their public entrypoints delegate lifecycle orchestration to `core/module.sh`,
+while phase scripts retain technology-specific behavior. Bootstrap uses an
+explicit profile to prepare Homebrew and load the ordered module list before
 configuring the current modules:
 
 ```bash
@@ -104,6 +106,8 @@ Current behavior:
 * Zsh configuration is applied and validated through the repository-managed
   `.zshrc` link without changing the default shell.
 * GitHub CLI is installed and validated without changing authentication state.
+* Java is installed through SDKMAN with Eclipse Temurin 21 and 17, keeping
+  Temurin 21 as the default runtime.
 
 Run the isolated test suite with:
 
@@ -141,6 +145,8 @@ validation remain in the versioned [implementation plans](docs/plans/).
   [plan 0009](docs/plans/0009-homebrew-reproducibility-assessment.md).
 * [x] Add GitHub CLI as a technology-owned module. See
   [plan 0010](docs/plans/0010-github-cli-module.md).
+* [x] Add Java as a technology-owned module via SDKMAN with multiple versions.
+  See [plan 0011](docs/plans/0011-java-sdkman-module.md).
 
 ## Following increments
 
@@ -152,8 +158,7 @@ validation remain in the versioned [implementation plans](docs/plans/).
 
 * [ ] Configure Oh My Posh.
 * [ ] Install Nerd Fonts.
-* [ ] Install SDKMAN!
-* [ ] Install Java, Kotlin and Gradle.
+* [ ] Install Kotlin and Gradle.
 * [ ] Configure VS Code.
 * [ ] Install common development utilities.
 

@@ -11,17 +11,18 @@
                               │
                               ▼
                   core/module-loader.sh
-                ┌─────────────┴─────────────┐
-                ▼                           ▼
-        modules/git/module.sh     modules/zsh/module.sh     modules/github-cli/module.sh
-                │                           │                           │
-                └─────────────┬─────────────┴──────────────┬────────────┘
-                              ▼
-                        core/module.sh
+      ┌─────────────┬─────────────┬─────────────┬─────────────┐
+      ▼             ▼             ▼             ▼
+modules/git/  modules/zsh/  modules/github-cli/  modules/java/
+ module.sh      module.sh       module.sh          module.sh
+      │             │             │                  │
+      └─────────────┬─────────────┴──────────────┬───┘
+                    ▼                            ▼
+                         core/module.sh
                               │
                 ┌─────────────┴─────────────┐
                 ▼                           ▼
-        Git phase scripts             Zsh phase scripts
+        Git and Zsh assets            Java SDKMAN state
                 │                           │
                 └─────────────┬─────────────┘
                               ▼
@@ -41,9 +42,9 @@
 | **modules**   | Installation, configuration and validation of a single technology.                          |
 | **dotfiles**  | Version-controlled assets owned by their corresponding technology modules.                  |
 
-Git, Zsh and GitHub CLI are independently executable technology modules, as
-defined by [ADR-0003](adr/0003-technology-owned-modules.md). Their entrypoints
-identify the module directory and delegate lifecycle dispatch to
+Git, Zsh, GitHub CLI and Java are independently executable technology modules,
+as defined by [ADR-0003](adr/0003-technology-owned-modules.md). Their
+entrypoints identify the module directory and delegate lifecycle dispatch to
 `core/module.sh`. The runner does not discover modules or contain
 technology-specific behavior.
 
@@ -115,4 +116,10 @@ alone is not treated as an installed module; the corresponding Homebrew formula
 must be present. Git validates the formula, executable and managed Git links.
 Zsh validates the formula, executable, managed `.zshrc` link and configuration
 syntax. GitHub CLI validates the formula and executable without changing local
-authentication state. No module changes the user's default shell automatically.
+authentication state.
+
+Java installs SDKMAN through its official installer with shell profile updates
+disabled, then uses SDKMAN to install and validate the configured Temurin
+versions. The managed `.zshrc` loads `sdkman-init.sh` when present so future
+Zsh sessions can use the SDKMAN-managed Java default without giving the Java
+module ownership of shell dotfiles.

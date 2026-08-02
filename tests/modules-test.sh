@@ -6,9 +6,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GIT_MODULE="$ROOT_DIR/modules/git/module.sh"
 ZSH_MODULE="$ROOT_DIR/modules/zsh/module.sh"
 GITHUB_CLI_MODULE="$ROOT_DIR/modules/github-cli/module.sh"
+JAVA_MODULE="$ROOT_DIR/modules/java/module.sh"
 BOOTSTRAP="$ROOT_DIR/bootstrap.sh"
 FIXTURE_BIN="$ROOT_DIR/tests/fixtures/bin"
 FIXTURE_INSTALLER="$ROOT_DIR/tests/fixtures/homebrew-installer.sh"
+SDKMAN_FIXTURE_INSTALLER="$ROOT_DIR/tests/fixtures/sdkman-installer.sh"
 REAL_LN="$(command -v ln)"
 REAL_MV="$(command -v mv)"
 REAL_RM="$(command -v rm)"
@@ -76,6 +78,10 @@ with_homebrew() {
     HOMEBREW_TEST_INSTALL_FAIL="${HOMEBREW_TEST_INSTALL_FAIL:-}" \
     HOMEBREW_TEST_INSTALL_WITHOUT_FORMULA="${HOMEBREW_TEST_INSTALL_WITHOUT_FORMULA:-}" \
     HOMEBREW_TEST_ZSH_SYNTAX_STATUS="${HOMEBREW_TEST_ZSH_SYNTAX_STATUS:-0}" \
+    SDKMAN_TEST_INSTALLER="${SDKMAN_TEST_INSTALLER:-}" \
+    SDKMAN_TEST_CURL_LOG="${SDKMAN_TEST_CURL_LOG:-}" \
+    SDKMAN_TEST_INSTALL_LOG="${SDKMAN_TEST_INSTALL_LOG:-}" \
+    SDKMAN_TEST_COMMAND_LOG="${SDKMAN_TEST_COMMAND_LOG:-}" \
     DEV_WORKSTATION_BREW_PATH="$TEST_ROOT/$name/prefix/bin/brew" \
     "$@"
 }
@@ -126,6 +132,24 @@ test_github_cli_module_owns_no_dotfiles() {
   HOME="$home" with_homebrew github-cli-ownership-brew bash "$GITHUB_CLI_MODULE" validate >/dev/null || fail 'GitHub CLI validation failed'
   [[ -z "$(find "$home" -mindepth 1 -maxdepth 1 -print -quit)" ]] || fail 'GitHub CLI module changed HOME'
   pass 'GitHub CLI module owns no dotfiles'
+}
+
+test_java_module_owns_only_sdkman_state() {
+  local home
+  home="$(new_home java-ownership)"
+
+  HOME="$home" DEV_WORKSTATION_PACKAGE_PROVIDER=brew \
+    PATH="$FIXTURE_BIN:$PATH" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$TEST_ROOT/java-ownership-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$TEST_ROOT/java-ownership-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$TEST_ROOT/java-ownership-sdk.log" \
+    with_homebrew java-ownership-brew bash "$JAVA_MODULE" all >/dev/null || fail 'Java module setup failed'
+  [[ -d "$home/.sdkman" ]] || fail 'Java module did not create SDKMAN state'
+  [[ ! -e "$home/.gitconfig" && ! -L "$home/.gitconfig" ]] || fail 'Java module changed .gitconfig'
+  [[ ! -e "$home/.gitignore_global" && ! -L "$home/.gitignore_global" ]] || fail 'Java module changed .gitignore_global'
+  [[ ! -e "$home/.zshrc" && ! -L "$home/.zshrc" ]] || fail 'Java module changed .zshrc'
+  pass 'Java module owns only SDKMAN state'
 }
 
 test_zsh_install_is_idempotent_when_present() {
@@ -224,6 +248,100 @@ test_github_cli_install_fails_without_brew_provider() {
   pass 'GitHub CLI installation fails before mutation without the Brew provider'
 }
 
+test_java_install_is_idempotent_when_present() {
+  local home
+  home="$(new_home java-installed)"
+
+  HOME="$home" DEV_WORKSTATION_PACKAGE_PROVIDER=brew \
+    PATH="$FIXTURE_BIN:$PATH" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$TEST_ROOT/java-installed-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$TEST_ROOT/java-installed-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$TEST_ROOT/java-installed-sdk.log" \
+    with_homebrew java-installed-brew bash "$JAVA_MODULE" all >/dev/null || fail 'initial Java setup failed'
+
+  rm -f "$TEST_ROOT/java-installed-curl.log" "$TEST_ROOT/java-installed-install.log" "$TEST_ROOT/java-installed-sdk-second.log"
+  HOME="$home" DEV_WORKSTATION_PACKAGE_PROVIDER=brew \
+    PATH="$FIXTURE_BIN:$PATH" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$TEST_ROOT/java-installed-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$TEST_ROOT/java-installed-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$TEST_ROOT/java-installed-sdk-second.log" \
+    with_homebrew java-installed-brew bash "$JAVA_MODULE" install >/dev/null || fail 'installed Java was not accepted'
+
+  [[ ! -e "$TEST_ROOT/java-installed-curl.log" ]] || fail 'idempotent Java install re-downloaded SDKMAN'
+  [[ ! -e "$TEST_ROOT/java-installed-install.log" ]] || fail 'idempotent Java install reran the SDKMAN installer'
+  [[ ! -e "$TEST_ROOT/java-installed-sdk-second.log" ]] || fail 'idempotent Java install reran SDKMAN install or default commands'
+  pass 'Java installation is idempotent when SDKMAN and versions are present'
+}
+
+test_java_install_uses_sdkman_when_absent() {
+  local home
+  home="$(new_home java-install)"
+
+  HOME="$home" DEV_WORKSTATION_PACKAGE_PROVIDER=brew \
+    PATH="$FIXTURE_BIN:$PATH" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$TEST_ROOT/java-install-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$TEST_ROOT/java-install-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$TEST_ROOT/java-install-sdk.log" \
+    with_homebrew java-install-brew "$REAL_BASH" "$ROOT_DIR/modules/java/install.sh" >/dev/null || fail 'controlled Java installation failed'
+  [[ "$(<"$TEST_ROOT/java-install-curl.log")" == 'https://get.sdkman.io?ci=true&rcupdate=false' ]] || fail 'Java installation did not use the SDKMAN installer URL'
+  [[ "$(<"$TEST_ROOT/java-install-install.log")" == 'installer-ran' ]] || fail 'Java installation did not run the SDKMAN installer'
+  [[ "$(<"$TEST_ROOT/java-install-sdk.log")" == $'sdk install java 21.0.11-tem\nsdk install java 17.0.19-tem\nsdk default java 21.0.11-tem' ]] || fail 'Java installation did not install the expected versions and default'
+  HOME="$home" PATH="$FIXTURE_BIN:$PATH" \
+    "$REAL_BASH" -lc 'set -uo pipefail; . "$1"; source_sdkman; sdk current java; java -version' _ "$ROOT_DIR/modules/java/common.sh" >"$TEST_ROOT/java-install-runtime.log" || fail 'installed Java did not expose the expected current version and java executable'
+  grep -q '^Current default java version 21.0.11-tem$' "$TEST_ROOT/java-install-runtime.log" || fail 'Java installation did not leave Java 21 as current'
+  grep -q '^openjdk version "21.0.11-tem"$' "$TEST_ROOT/java-install-runtime.log" || fail 'current java executable did not report the expected version'
+  [[ -x "$home/.sdkman/candidates/java/current/bin/java" ]] || fail 'controlled Java installation did not provide the current java executable'
+  pass 'Java installation invokes SDKMAN when the runtime is absent'
+}
+
+test_java_install_fails_without_brew_provider() {
+  local home
+  home="$(new_home java-no-provider)"
+
+  if HOME="$home" PATH="$FIXTURE_BIN:$PATH" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$TEST_ROOT/java-no-provider-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$TEST_ROOT/java-no-provider-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$TEST_ROOT/java-no-provider-sdk.log" \
+    "$REAL_BASH" "$ROOT_DIR/modules/java/install.sh" >/dev/null 2>&1; then
+    fail 'Java installation succeeded without the Brew provider'
+  fi
+  [[ ! -e "$TEST_ROOT/java-no-provider-curl.log" ]] || fail 'failed Java install attempted curl'
+  [[ ! -e "$TEST_ROOT/java-no-provider-install.log" ]] || fail 'failed Java install ran the SDKMAN installer'
+  [[ ! -e "$TEST_ROOT/java-no-provider-sdk.log" ]] || fail 'failed Java install invoked SDKMAN commands'
+  [[ -z "$(find "$home" -mindepth 1 -maxdepth 1 -print -quit)" ]] || fail 'failed Java installation changed HOME'
+  pass 'Java installation fails before mutation without the Brew provider'
+}
+
+test_java_validation_checks_default_version() {
+  local home
+  home="$(new_home java-invalid-default)"
+
+  HOME="$home" DEV_WORKSTATION_PACKAGE_PROVIDER=brew \
+    PATH="$FIXTURE_BIN:$PATH" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$TEST_ROOT/java-invalid-default-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$TEST_ROOT/java-invalid-default-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$TEST_ROOT/java-invalid-default-sdk.log" \
+    with_homebrew java-invalid-default-brew bash "$JAVA_MODULE" all >/dev/null || fail 'initial Java setup failed'
+
+  rm -f "$home/.sdkman/candidates/java/current"
+  ln -s 17.0.19-tem "$home/.sdkman/candidates/java/current"
+  if HOME="$home" DEV_WORKSTATION_PACKAGE_PROVIDER=brew \
+    PATH="$FIXTURE_BIN:$PATH" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$TEST_ROOT/java-invalid-default-curl-second.log" \
+    SDKMAN_TEST_INSTALL_LOG="$TEST_ROOT/java-invalid-default-install-second.log" \
+    SDKMAN_TEST_COMMAND_LOG="$TEST_ROOT/java-invalid-default-sdk-second.log" \
+    with_homebrew java-invalid-default-brew bash "$JAVA_MODULE" validate >/dev/null 2>&1; then
+    fail 'invalid Java default unexpectedly validated'
+  fi
+  pass 'Java validation checks the configured default version'
+}
+
 test_git_configuration_is_idempotent_and_preserves_existing_files() {
   local home
   local backups
@@ -309,6 +427,10 @@ test_bootstrap_configures_all_assets() {
     HOMEBREW_TEST_INSTALLER="$ROOT_DIR/tests/fixtures/homebrew-installer.sh" \
     HOMEBREW_TEST_APT_LOG="$homebrew_root/apt.log" \
     HOMEBREW_TEST_BREW_LOG="$homebrew_root/brew.log" \
+    SDKMAN_TEST_INSTALLER="$SDKMAN_FIXTURE_INSTALLER" \
+    SDKMAN_TEST_CURL_LOG="$homebrew_root/sdkman-curl.log" \
+    SDKMAN_TEST_INSTALL_LOG="$homebrew_root/sdkman-install.log" \
+    SDKMAN_TEST_COMMAND_LOG="$homebrew_root/sdkman.log" \
     DEV_WORKSTATION_BREW_PATH="$homebrew_root/prefix/bin/brew" \
     bash "$BOOTSTRAP" ubuntu >"$output" || fail 'bootstrap failed'
   assert_link "$home/.gitconfig" "$ROOT_DIR/dotfiles/git/.gitconfig"
@@ -323,11 +445,15 @@ test_bootstrap_configures_all_assets() {
   grep -q '^Installing gh with Homebrew\.\.\.$' "$output" || fail 'bootstrap did not identify GitHub CLI installation'
   grep -q '^Configuring GitHub CLI\.\.\.$' "$output" || fail 'bootstrap did not identify GitHub CLI configuration'
   grep -q '^GitHub CLI validated\.$' "$output" || fail 'bootstrap did not identify GitHub CLI validation'
+  grep -q '^Installing Java with SDKMAN\.\.\.$' "$output" || fail 'bootstrap did not identify Java installation'
+  grep -q '^Configuring Java\.\.\.$' "$output" || fail 'bootstrap did not identify Java configuration'
+  grep -q '^Java validated\.$' "$output" || fail 'bootstrap did not identify Java validation'
   [[ "$(<"$homebrew_root/brew.log")" == $'brew install git\nbrew install zsh\nbrew install gh' ]] || fail 'bootstrap did not install Git before Zsh before GitHub CLI'
+  [[ "$(<"$homebrew_root/sdkman.log")" == $'sdk install java 21.0.11-tem\nsdk install java 17.0.19-tem\nsdk default java 21.0.11-tem' ]] || fail 'bootstrap did not install the expected Java versions and default'
   if grep -q '^Symbolic links ' "$output"; then
     fail 'bootstrap exposed generic core success messages'
   fi
-  pass 'bootstrap configures and validates Git before Zsh before GitHub CLI'
+  pass 'bootstrap configures and validates Git before Zsh before GitHub CLI before Java'
 }
 
 test_bootstrap_git_failure_skips_zsh() {
@@ -387,10 +513,11 @@ test_zsh_failure_keeps_validated_git() {
   pass 'Zsh failure does not undo the validated Git module'
 }
 
-printf '1..16\n'
+printf '1..21\n'
 test_git_module_owns_only_git
 test_zsh_module_owns_only_zsh
 test_github_cli_module_owns_no_dotfiles
+test_java_module_owns_only_sdkman_state
 test_zsh_install_is_idempotent_when_present
 test_zsh_install_uses_homebrew_when_absent
 test_zsh_install_fails_without_brew_provider
@@ -399,6 +526,10 @@ test_git_install_uses_homebrew_when_absent
 test_git_install_fails_without_brew_provider
 test_github_cli_install_uses_homebrew_when_absent
 test_github_cli_install_fails_without_brew_provider
+test_java_install_is_idempotent_when_present
+test_java_install_uses_sdkman_when_absent
+test_java_install_fails_without_brew_provider
+test_java_validation_checks_default_version
 test_git_configuration_is_idempotent_and_preserves_existing_files
 test_git_failure_rolls_back_both_targets
 test_bootstrap_configures_all_assets
